@@ -77,7 +77,18 @@
   --coral-edge: color-mix(in srgb, var(--coral) 40%, var(--surface));
   --rasp-edge: color-mix(in srgb, var(--rasp) 35%, var(--surface));
   --violet-edge: color-mix(in srgb, var(--violet) 30%, var(--surface));
-  --pink-edge: color-mix(in srgb, var(--pink) 50%, var(--surface));
+
+  /* The tiles wear the hue louder than anything else does — a --*-soft tint is
+     tuned to sit UNDER text in a banner, and at that strength the instrument
+     cluster read washed out. These are their own values, not a bump to the soft
+     tints, so the verdict cards and banners keep the weight they were tuned for.
+     The ceiling is the 12px --muted caption on top: every one of these clears
+     4.5:1 (worst case 5.25). Violet runs lowest in light because it is the only
+     dark hue of the three — matched percentages would make it twice the weight
+     of the other two. */
+  --tile-aqua: color-mix(in srgb, var(--aqua) 34%, var(--surface));
+  --tile-violet: color-mix(in srgb, var(--violet) 22%, var(--surface));
+  --tile-pink: color-mix(in srgb, var(--pink) 40%, var(--surface));
 
   /* semantic aliases — the gauge/verdict traffic light, in-palette.
      aqua = under the safe line · coral = a touch over · raspberry = speeding */
@@ -157,7 +168,14 @@
   --coral-edge: color-mix(in srgb, var(--coral) 38%, var(--surface));
   --rasp-edge: color-mix(in srgb, var(--rasp) 42%, var(--surface));
   --violet-edge: color-mix(in srgb, var(--violet) 55%, var(--surface));
-  --pink-edge: color-mix(in srgb, var(--pink) 34%, var(--surface));
+
+  /* Here the constraint flips. On paper a stronger tint moves AWAY from the
+     near-black ink; on this ground it moves TOWARDS the near-white ink, so aqua
+     and pink — the two bright hues — hit their contrast floor first and can't be
+     pushed as far as they can in light. Violet is dark enough to go further. */
+  --tile-aqua: color-mix(in srgb, var(--aqua) 30%, var(--surface));
+  --tile-violet: color-mix(in srgb, var(--violet) 42%, var(--surface));
+  --tile-pink: color-mix(in srgb, var(--pink) 35%, var(--surface));
 
   --shadow: 0 1px 2px color-mix(in srgb, #000 40%, transparent),
     0 8px 24px color-mix(in srgb, #000 45%, transparent);
@@ -662,7 +680,10 @@ input[type='number'] {
   background: radial-gradient(120% 130% at 50% -25%, var(--panel-2) 0%, var(--panel) 62%);
   color: var(--on-panel);
   padding: 24px 26px 22px;
-  box-shadow: var(--shadow-pop);
+  /* --shadow-pop (a 60px violet spread) is the sheet's shadow: a modal floats
+     above the page, and should look it. The panel doesn't float — it sits on the
+     page as its one fixed landmark — so it takes the gentler lift instead. */
+  box-shadow: var(--shadow-lift);
 }
 .panel::before {
   /* aqua glow behind the dial — the theme colour doing what it does best */
@@ -800,22 +821,25 @@ input[type='number'] {
   position: relative;
   overflow: hidden;
   background: var(--surface-2);
-  border: 1px solid var(--line);
+  /* The border is the ink at low alpha, composited over whatever fill the tile
+     happens to wear. One rule holds a ~1.45:1 hairline against all three hues in
+     both themes — where a per-hue border colour could not: aqua is so close to
+     white that an aqua-on-white edge vanished against an aqua-tinted fill (1.04),
+     while the same treatment on violet came out five times too heavy. Letting the
+     ink do it makes the edge self-balancing, and it flips with the theme for free. */
+  border: 1px solid color-mix(in srgb, var(--ink) 16%, transparent);
   border-radius: var(--r);
   padding: 16px 18px;
   box-shadow: var(--shadow);
 }
 .tile.t-aqua {
-  background: var(--aqua-soft);
-  border-color: var(--aqua-edge);
+  background: var(--tile-aqua);
 }
 .tile.t-violet {
-  background: var(--violet-soft);
-  border-color: var(--violet-edge);
+  background: var(--tile-violet);
 }
 .tile.t-pink {
-  background: var(--pink-soft);
-  border-color: var(--pink-edge);
+  background: var(--tile-pink);
 }
 .tile .k {
   font-size: 12.5px;
