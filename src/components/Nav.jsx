@@ -1,6 +1,7 @@
 import { useRef } from 'react'
 import { useStore } from '../store/store.js'
 import { serializeState, parseBackup, backupFilename, downloadJSON } from '../lib/backup.js'
+import { ThemeToggle } from './ui.jsx'
 import { IconHome, IconLedger, IconInsights, IconGoals, IconSpend, IconEvents } from './icons.jsx'
 
 // One name per section, used on desktop and mobile alike. The nav label, the
@@ -16,18 +17,22 @@ const ITEMS = [
   { key: 'events', label: 'Planned', Icon: IconEvents },
 ]
 
+// The dial, in miniature. Every stroke is a theme token, so the mark flips with
+// the app: the needle and arc ride --brand-ink (violet on paper, aqua on dark).
+// It used to hard-code an invented teal, which on white was a 1.4:1 stroke —
+// all but invisible in the very theme it shipped in.
 export function BrandMark(props) {
   return (
     <svg viewBox="0 0 32 32" fill="none" {...props}>
-      <path d="M4 22a12 12 0 0 1 24 0" stroke="#e5e5f0" strokeWidth="3.4" strokeLinecap="round" />
-      <path d="M4 22A12 12 0 0 1 9 12.2" stroke="#4BD9D1" strokeWidth="3.4" strokeLinecap="round" />
-      <path d="M16 22l7-6" stroke="#7F2CDE" strokeWidth="3" strokeLinecap="round" />
-      <circle cx="16" cy="22" r="3" fill="#7F2CDE" />
+      <path d="M4 22a12 12 0 0 1 24 0" stroke="var(--line)" strokeWidth="3.4" strokeLinecap="round" />
+      <path d="M4 22A12 12 0 0 1 9 12.2" stroke="var(--brand-ink)" strokeWidth="3.4" strokeLinecap="round" />
+      <path d="M16 22l7-6" stroke="var(--brand-ink)" strokeWidth="3" strokeLinecap="round" />
+      <circle cx="16" cy="22" r="3" fill="var(--brand-ink)" />
     </svg>
   )
 }
 
-export default function Nav({ view, onNavigate }) {
+export default function Nav({ view, onNavigate, theme, onToggleTheme }) {
   const { state, actions } = useStore()
   const fileRef = useRef(null)
 
@@ -70,6 +75,7 @@ export default function Nav({ view, onNavigate }) {
         </div>
         {links()}
         <div className="sidebar-foot">
+          <ThemeToggle theme={theme} toggle={onToggleTheme} />
           <button className="linkish" onClick={onExport}>
             Export data
           </button>

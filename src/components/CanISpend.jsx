@@ -74,7 +74,7 @@ export default function CanISpend() {
             Log this spend
           </button>
         )}
-        {logged && <p style={{ color: 'var(--go)', fontWeight: 600, marginTop: 12 }}>Logged ✓</p>}
+        {logged && <p style={{ color: 'var(--brand-ink)', fontWeight: 600, marginTop: 12 }}>Logged ✓</p>}
       </div>
     </div>
   )

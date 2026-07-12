@@ -214,7 +214,7 @@ export default function Dashboard({ onNavigate }) {
             <div className="t" style={{ fontWeight: 700 }}>Free to spend over {dash.daysToPay} days</div>
             <div className="s">that's your {gbp(dash.safePerDay)}/day</div>
           </div>
-          <div className="amt" style={{ color: 'var(--teal-deep)' }}>{gbp(Math.max(dash.pool, 0))}</div>
+          <div className="amt" style={{ color: 'var(--brand-ink)' }}>{gbp(Math.max(dash.pool, 0))}</div>
         </div>
       </div>
 

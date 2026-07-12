@@ -58,8 +58,10 @@ export default function Gauge({ pace, overCommitted }) {
   return (
     <svg className="gauge-svg" viewBox="0 0 280 176" role="img" aria-label={`Spending pace: ${zone}`}>
       <defs>
+        {/* depth comes from fading the aqua, not from a second teal: the stop
+            this replaced was an invented sixth colour, off-palette */}
         <linearGradient id="g-go" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor="#4BD9D1" />
+          <stop offset="0%" stopColor="#78EBE5" stopOpacity="0.55" />
           <stop offset="100%" stopColor="#78EBE5" />
         </linearGradient>
         <linearGradient id="g-tight" x1="0" y1="0" x2="1" y2="0">
@@ -118,7 +120,7 @@ export default function Gauge({ pace, overCommitted }) {
         }}
       >
         <circle cx={mx} cy={my} r="13" fill={markColor} opacity="0.3" filter="url(#g-glow)" />
-        <circle cx={mx} cy={my} r="12" fill="#150B26" />
+        <circle cx={mx} cy={my} r="12" style={{ fill: 'var(--panel)' }} />
         <circle cx={mx} cy={my} r="12" fill="none" stroke={markColor} strokeWidth="3.5" />
         <circle cx={mx} cy={my} r="4.5" fill={markColor} />
       </g>
