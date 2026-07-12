@@ -1,11 +1,12 @@
 import { useRef } from 'react'
 import { useStore } from '../store/store.js'
 import { serializeState, parseBackup, backupFilename, downloadJSON } from '../lib/backup.js'
-import { IconHome, IconLedger, IconGoals, IconSpend, IconEvents } from './icons.jsx'
+import { IconHome, IconLedger, IconInsights, IconGoals, IconSpend, IconEvents } from './icons.jsx'
 
 const ITEMS = [
   { key: 'home', label: 'Today', short: 'Today', Icon: IconHome },
   { key: 'money', label: 'Transactions', short: 'Money', Icon: IconLedger },
+  { key: 'insights', label: 'Insights', short: 'Insights', Icon: IconInsights },
   { key: 'goals', label: 'Goals', short: 'Goals', Icon: IconGoals },
   { key: 'spend', label: 'Can I spend?', short: 'Spend?', Icon: IconSpend },
   { key: 'events', label: 'Planned', short: 'Plans', Icon: IconEvents },

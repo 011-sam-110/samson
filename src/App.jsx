@@ -3,6 +3,7 @@ import { StoreProvider } from './store/store.js'
 import Nav from './components/Nav.jsx'
 import Dashboard from './components/Dashboard.jsx'
 import Transactions from './components/Transactions.jsx'
+import Insights from './components/Insights.jsx'
 import Goals from './components/Goals.jsx'
 import CanISpend from './components/CanISpend.jsx'
 import Events from './components/Events.jsx'
@@ -16,6 +17,7 @@ function Shell() {
       <main className="main">
         {view === 'home' && <Dashboard onNavigate={setView} />}
         {view === 'money' && <Transactions />}
+        {view === 'insights' && <Insights />}
         {view === 'goals' && <Goals />}
         {view === 'spend' && <CanISpend />}
         {view === 'events' && <Events />}

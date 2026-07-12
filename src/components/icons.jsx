@@ -42,6 +42,16 @@ export const IconEvents = (p) => (
   </svg>
 )
 
+export const IconInsights = (p) => (
+  <svg viewBox="0 0 24 24" {...S} {...p}>
+    <path d="M4 20V4" />
+    <path d="M4 20h16" />
+    <rect x="7" y="12" width="3" height="5" />
+    <rect x="12" y="8" width="3" height="9" />
+    <rect x="17" y="14" width="3" height="3" />
+  </svg>
+)
+
 export const IconPlus = (p) => (
   <svg viewBox="0 0 24 24" {...S} {...p}>
     <path d="M12 5v14M5 12h14" />
