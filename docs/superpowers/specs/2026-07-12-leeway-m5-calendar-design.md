@@ -22,12 +22,17 @@ Everything is **offline and deterministic**. No AI, no external term-date datase
 computed in a pure engine; nudge wording is templated from those numbers — the same honesty rule as
 the rest of Leeway.
 
-## Placement decision
+## Placement decision (revised after PR #2)
 
-The calendar **replaces the body of the existing "Planned" screen** (`src/components/Events.jsx`).
-The nav stays at **five tabs** (the deliberate "five, not six" rule in `Nav.jsx`); the `events` view
-key and the "Planned" label are unchanged, so `App.jsx` and `Nav.jsx` need no edits. The planned-
-event add flow and list are **kept** (moved beneath the grid), so no existing capability is lost.
+The teammate's **PR #2 (merged)** folded the old "Planned" tab into Goals (`Events.jsx` →
+`PlannedSpends.jsx`, now a section inside Goals) and cut the nav to **four** tabs: Today ·
+Transactions · Insights · Goals. That removes the tab this milestone was originally going to upgrade.
+
+So the calendar now lives as a **"Spending calendar" section on the Insights screen**
+(`src/components/Insights.jsx`) — the analytics home, and the natural place for a spend heatmap (it's
+literally "show my spending graphically", the client's core ask). `App.jsx`/`Nav.jsx` need **no
+edits** (the Insights tab already exists). Planned-event **add/remove stays in Goals**
+(PlannedSpends); the calendar renders events as **read-only markers**, so nothing is duplicated.
 
 ## Data model — state v3
 
@@ -110,24 +115,26 @@ No React, no storage. Reuses `finance.js` date helpers (`toDate`, `daysBetween`,
   nudge)*. A simple computed suggestion: discretionary pool available over the span ÷ span days,
   reusing the run-rate idea. If it complicates the plan, ship the nudge without an exact figure.
 
-## UI — `src/components/Events.jsx` becomes the calendar
+## UI — a "Spending calendar" section in `src/components/Insights.jsx`
 
-Keeps `export default function Events()` and the `events` view key so wiring is untouched.
-Internally it may be split into small presentational pieces (all in the same file or a `calendar/`
-folder — implementer's call, following the small-focused-file principle):
+Added as a new section using the screen's existing `section-title` + `card card-pad` pattern,
+rendered **independently of the analytics `enoughData` gate** so it always shows (you can set term
+dates and see upcoming bills/events even with little logged spend). The section's contents may be
+extracted into a small `src/components/Calendar.jsx` (implementer's call, following the
+small-focused-file principle) that Insights imports:
 
-- **Nudge card** at top, rendered from `termNudge` (hidden when `null`).
+- **Nudge card** at top of the section, rendered from `termNudge` (hidden when `null`).
 - **Month grid**: header with ‹ prev / today / next › controls and the month label; a 7-column
   Monday-start grid. Each cell shows the day number and is shaded by `heatLevel`. Markers: a muted
-  **ring** = a bill due, a coral **pip** = a planned event. Term spans render as a **labelled band
-  above the affected week + a coloured top-edge on the covered cells** — a *separate encoding
+  **ring** = a bill due, a coral **pip** = a planned event. Term spans render as a **coloured
+  top-edge on the covered cells** (+ an optional labelled band above the week) — a *separate encoding
   channel* from the heat fill, so tint and heat never fight.
-- **Day detail**: tapping a cell opens a `Sheet`/popover listing that day's transactions, bills due,
-  events, and any term label. Reuses the existing `Sheet` from `ui.jsx`.
-- **Term-dates editor**: an "Add term dates" button → a form (kind picker + label + start/end),
-  reusing `forms.jsx` patterns; a list of existing spans with remove buttons.
-- **Planned-events**: the existing add flow (`EventForm`) and upcoming list are retained beneath the
-  grid.
+- **Day detail**: tapping a cell opens a `Sheet` listing that day's transactions, bills due, events,
+  and any term label. Reuses the existing `Sheet` from `ui.jsx`.
+- **Term-dates editor**: an "Add term dates" button → `TermSpanForm` (kind picker + label +
+  start/end) in a `Sheet`; a list of existing spans with remove buttons.
+- **Events are read-only** here (pips + day-detail). Adding/removing planned events stays in Goals
+  (PlannedSpends, from PR #2) — the calendar does not duplicate that flow.
 
 ## Palette / dataviz compliance
 
@@ -166,10 +173,10 @@ existing v2 with no `termSpans` is safe.
 
 **Regression:** all 92 existing tests stay green.
 
-**Drive-to-verify (Playwright, per the workflow):** open Planned → the demo month shows a heatmap of
-seeded spend; add a Freshers span → the week tints and the nudge card appears; add a planned event →
-its pip shows on the day and in day-detail; page prev/next months; toggle dark mode and confirm the
-heat ramp + tints stay legible.
+**Drive-to-verify (Playwright, per the workflow):** open Insights → scroll to the Spending calendar →
+the demo month shows a heatmap of seeded spend and the Freshers nudge card; add a term span → the
+week tints and the nudge updates; the demo planned event shows its pip on the day and in day-detail;
+page prev/next months; toggle dark mode and confirm the heat ramp + tints stay legible.
 
 ## Seed (demo data)
 
@@ -188,9 +195,10 @@ existing `iso(offsetDays)` helper. Keeps the "app is alive the moment it opens" 
 ## Success criteria
 
 - `calendar.js` is pure and fully unit-tested; all existing tests stay green.
-- The Planned screen renders a month heatmap of real seeded spend, with bill/event markers and
-  user-set term spans, and pages between months.
+- The Insights "Spending calendar" section renders a month heatmap of real seeded spend, with
+  bill/event markers and user-set term spans, and pages between months.
 - Setting a Freshers or exam span produces the correct highlighted band and a matching plan-ahead
   nudge.
 - State migrates v2 → v3 and backups round-trip `termSpans`, all verified by tests.
-- The whole feature works offline; dark mode is legible; the nav stays at five tabs.
+- The whole feature works offline; dark mode is legible; the nav stays at four tabs (unchanged from
+  PR #2).

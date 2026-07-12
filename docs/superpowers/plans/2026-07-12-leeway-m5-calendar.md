@@ -4,7 +4,7 @@
 
 **Goal:** Turn the "Planned" tab into a month calendar — a single-hue spend heatmap with bill/event markers and user-set term spans (Freshers/exams/term) that drive deterministic plan-ahead nudges — all offline.
 
-**Architecture:** A new pure module `src/engine/calendar.js` computes every number (daily spend, heat levels, bill projection, the month grid, term overlays, the nudge). State gains a `termSpans[]` collection (v3 migration). `src/components/Events.jsx` is rewritten to render the calendar, reusing existing `ui.jsx`/`forms.jsx` primitives; the `events` view key and "Planned" nav label are unchanged so `App.jsx`/`Nav.jsx` need no edits.
+**Architecture:** A new pure module `src/engine/calendar.js` computes every number (daily spend, heat levels, bill projection, the month grid, term overlays, the nudge). State gains a `termSpans[]` collection (v3 migration). A new "Spending calendar" section is added to `src/components/Insights.jsx` (contents extracted to `src/components/Calendar.jsx`), reusing existing `ui.jsx`/`forms.jsx` primitives; `App.jsx`/`Nav.jsx` are untouched (the Insights tab already exists after PR #2 folded Planned into Goals and cut the nav to four).
 
 **Tech Stack:** React 18 (JSX), Vite, Vitest (`node`). No new dependencies.
 
@@ -575,26 +575,29 @@ export function TermSpanForm({ onDone }) {
 
 ---
 
-### Task 7: Calendar screen (rewrite the Planned tab)
+### Task 7: Calendar section in Insights
 
 **Files:**
-- Modify: `src/components/Events.jsx` (rewrite as the calendar; keep `export default function Events()`)
-- Modify: `src/index.css` (calendar grid + heat + marker + term-band styles)
+- Create: `src/components/Calendar.jsx` (the calendar section component)
+- Modify: `src/components/Insights.jsx` (import + render `<Calendar />` as a section)
+- Modify: `src/index.css` (calendar grid + heat + marker + term-edge styles)
 
 **Interfaces:**
-- Consumes: `buildMonth`, `termNudge` from `calendar.js`; `TermSpanForm`, `EventForm` from `forms.jsx`; `Sheet`, `Field` from `ui.jsx`; `addMonths` from `finance.js`; `gbp`, `fullDate`, `relativeDays` from `format.js`; `removeTermSpan`, `removeEvent` actions.
+- Consumes: `buildMonth`, `termNudge` from `calendar.js`; `TermSpanForm` from `forms.jsx`; `Sheet`, `Field` from `ui.jsx`; `useStore` from `store.js`; `addMonths` from `finance.js`; `gbp`, `fullDate` from `format.js`; `removeTermSpan` action.
+- Produces: `<Calendar />` — default export rendered inside Insights.
 
-- [ ] **Step 1: Invoke the `dataviz` skill** before writing the heat CSS. Confirm: single-hue `--violet` sequential ramp (4 steps via `color-mix` against `--surface`), status colours untouched, term tints on edges/bands only, markers ≥ 8px, a legend present.
+- [ ] **Step 1: Invoke the `dataviz` skill** before writing the heat CSS. Confirm: single-hue `--violet` sequential ramp (4 steps via `color-mix` against `--surface`), status colours untouched, term tints on edges only (reuse PR #2's `--pink-edge`/`--violet-edge` + existing `--aqua-edge`), markers ≥ 8px, a legend present.
 
-- [ ] **Step 2: Build the screen.** Rewrite `Events.jsx` to render, top to bottom:
-  1. Page head ("Coming up" / "Planned").
-  2. **Nudge card** — `const nudge = termNudge(state, new Date())`; render a card with the `nudge.message` when non-null (class keyed on `nudge.kind`), else nothing.
-  3. **Month controls** — `‹` / month label / `›` and a "Today" reset, driven by an `anchor` state (`useState(() => new Date())`); prev/next use `addMonths(anchor, ±1)`.
-  4. **Grid** — `const { weeks } = buildMonth(state, anchor, new Date())`; a Mon–Sun weekday header row, then 7-column cells. Each cell: a `heat-N` class from `cell.heatLevel`, the day number, a coral pip if `cell.events.length`, a muted ring if `cell.bills.length`, a `term-<kind>` top-edge class if `cell.terms.length`, `is-today`/`out-month` modifiers. Clicking a cell sets `selected` (the cell) → opens the day-detail `Sheet`.
-  5. **Heat legend** — "less … more" with the four ramp swatches.
-  6. **Day-detail `Sheet`** (when `selected`) — `fullDate(selected.date)`, its term labels, `bills` (label + `gbp`), `events` (label + `gbp`), and the day's discretionary spend.
-  7. **Term-dates section** — an "Add term dates" button opening `TermSpanForm` in a `Sheet`; a list of `state.termSpans` with remove buttons.
-  8. **Planned-events section** — keep the existing `EventForm` add-flow + the upcoming list (moved beneath the grid) unchanged.
+- [ ] **Step 2: Build `Calendar.jsx`.** A default-export component rendering, top to bottom:
+  1. **Nudge card** — `const nudge = termNudge(state, new Date())`; render a card with the `nudge.message` when non-null (class keyed on `nudge.kind`), else nothing.
+  2. **Month controls** — `‹` / month label / `›` and a "Today" reset, driven by an `anchor` state (`useState(() => new Date())`); prev/next use `addMonths(anchor, ±1)`.
+  3. **Grid** — `const { weeks } = buildMonth(state, anchor, new Date())`; a Mon–Sun weekday header row, then 7-column cells. Each cell: a `heat-N` class from `cell.heatLevel`, the day number, a coral pip if `cell.events.length`, a muted ring if `cell.bills.length`, a `term-<kind>` top-edge class if `cell.terms.length`, `is-today`/`out-month` modifiers. Clicking a cell sets `selected` (the cell) → opens the day-detail `Sheet`.
+  4. **Heat legend** — "less … more" with the four ramp swatches.
+  5. **Day-detail `Sheet`** (when `selected`) — `fullDate(selected.date)`, its term labels, `bills` (label + `gbp`), `events` (label + `gbp`), and the day's discretionary spend.
+  6. **Term-dates section** — an "Add term dates" button opening `TermSpanForm` in a `Sheet`; a list of `state.termSpans` with remove buttons (`removeTermSpan`).
+  Events are **read-only** here (pips + day-detail); adding/removing planned events stays in Goals (PlannedSpends) — do **not** duplicate that flow.
+
+- [ ] **Step 2b: Mount in Insights.** In `src/components/Insights.jsx`, `import Calendar from './Calendar.jsx'` and render a section — `<div className="section-title">Spending calendar</div>` then `<Calendar />` — placed **above** the `!enoughData` early guard so it shows even with sparse data.
 
 - [ ] **Step 3: Add CSS to `src/index.css`.** Minimal, token-based. The heat ramp (single hue):
 
@@ -626,16 +629,16 @@ export function TermSpanForm({ onDone }) {
 
 ### Task 8: Verify end-to-end (drive the app)
 
-- [ ] **Step 1:** `npm run dev`; open the app, go to **Planned**.
+- [ ] **Step 1:** `npm run dev`; open the app, go to **Insights**, scroll to the **Spending calendar** section.
 - [ ] **Step 2:** Confirm on the demo seed: the month grid renders; the seeded discretionary spend shows as violet heat on the right days; the seeded **Freshers** span shows its top-edge tint and the **plan-ahead nudge card** appears with the cap message; **zero console errors**.
-- [ ] **Step 3:** Page to next/prev months and back to Today; the rent bill marker (ring) shows on its due day; add a planned event → its coral pip appears on the day and in the day-detail sheet.
-- [ ] **Step 4:** Add a term span via the editor (e.g. an Exams span a week out) → its band shows and the nudge updates; remove it → nudge/tint clear.
-- [ ] **Step 5:** Toggle **dark mode**; confirm the heat ramp + term tints stay legible (contrast holds).
+- [ ] **Step 3:** Page to next/prev months and back to Today; the rent bill marker (ring) shows on its due day; the seeded planned event (Ross's birthday) shows its coral pip on the day and in the day-detail sheet.
+- [ ] **Step 4:** Add a term span via the editor (e.g. an Exams span a week out) → its edge tint shows and the nudge updates; remove it → nudge/tint clear.
+- [ ] **Step 5:** Switch to **dark mode** (Account menu → Settings → Appearance); confirm the heat ramp + term tints stay legible (contrast holds).
 - [ ] **Step 6:** Screenshot the calendar (light + dark) for the record.
 
 ## Self-Review
 
-- **Spec coverage:** Data model v3 + migration → Task 1; backup round-trip → Task 2; `daySpend`/`heatLevel` → Task 3; `billOccurrences`/`monthMatrix` → Task 4; `termSpansOn`/`termNudge`/`buildMonth` → Task 5; term editor → Task 6; calendar screen (grid, heat, markers, day-detail, nudge card, kept event flow) + palette/dataviz → Task 7; seed → Task 1; drive-to-verify → Task 8. ✔ (`freshersCap` was spec'd as optional/nice-to-have and is intentionally deferred — nudges ship without an exact cap figure.)
+- **Spec coverage:** Data model v3 + migration → Task 1; backup round-trip → Task 2; `daySpend`/`heatLevel` → Task 3; `billOccurrences`/`monthMatrix` → Task 4; `termSpansOn`/`termNudge`/`buildMonth` → Task 5; term editor → Task 6; calendar section in Insights (grid, heat, markers, day-detail, nudge card, term editor; events read-only) + palette/dataviz → Task 7; seed → Task 1; drive-to-verify → Task 8. ✔ (`freshersCap` was spec'd as optional/nice-to-have and is intentionally deferred — nudges ship without an exact cap figure.)
 - **Placeholder scan:** every code step shows real code; no TBD/echo-placeholders. ✔
 - **Type consistency:** `termSpans` shape, `buildMonth` cell fields, and `termNudge` return shape match the spec §Interfaces and are used identically across Tasks 5, 7. `addMonths` is exported in Task 4 before its use in Tasks 4/7. ✔
 - **No-regression:** every task ends on `npm test` green; 92 existing tests untouched. ✔
