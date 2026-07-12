@@ -1,5 +1,5 @@
 // Hand-built chart primitives for Insights. Single-hue magnitude bars in brand
-// indigo on a muted track - no chart library, no status-colour reuse. Text wears
+// violet on a muted track - no chart library, no status-colour reuse. Text wears
 // ink tokens; the bar length alone carries magnitude.
 import { gbp, pct } from '../lib/format.js'
 

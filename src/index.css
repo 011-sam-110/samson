@@ -236,6 +236,7 @@ input[type='number'] {
   color: var(--muted);
   font-size: 12.5px;
   padding: 4px 0;
+  text-align: left;
 }
 .linkish:hover {
   color: var(--rasp);
@@ -781,14 +782,17 @@ input[type='number'] {
   border-radius: var(--r-pill);
   overflow: hidden;
 }
+/* Chart bars take violet, the one brand colour with no status meaning — aqua,
+   coral and raspberry all say something on the gauge, and a bar chart must not
+   imply "good" or "over". Length carries magnitude; hue carries nothing. */
 .bar-fill {
   height: 100%;
-  background: var(--brand);
+  background: var(--violet);
   border-radius: var(--r-pill);
   min-width: 6px;
 }
 .bar-fill-soft {
-  background: rgba(91, 75, 224, 0.38);
+  background: rgba(127, 44, 222, 0.38);
 }
 .bar-share {
   font-size: 12px;
