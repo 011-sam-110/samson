@@ -6,7 +6,7 @@ import Gauge, { zoneOf } from './Gauge.jsx'
 import { Sheet, useCountUp } from './ui.jsx'
 import { ExpenseForm, ReconcileForm, SurviveForm } from './forms.jsx'
 import CanISpend from './CanISpend.jsx'
-import { IconAlert, IconInfo, IconPlus } from './icons.jsx'
+import { IconAlert, IconInfo, IconPlus, IconWallet } from './icons.jsx'
 
 const ZONE_PILL = { go: 'On track', tight: 'Spending fast', over: 'Too fast' }
 
@@ -69,6 +69,21 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* ── the two things you actually came to do ──
+          Directly under the number they move: log what you just spent, or ask
+          before you spend it. On mobile they stop being buttons and become the
+          two brand-coloured slabs you can hit with a thumb without looking. */}
+      <div className="today-actions">
+        <button className="act act-violet" onClick={() => setSheet('expense')}>
+          <IconPlus />
+          <span>Log a spend</span>
+        </button>
+        <button className="act act-aqua" onClick={() => setSheet('canispend')}>
+          <IconWallet />
+          <span>Can I spend…?</span>
+        </button>
+      </div>
+
       {/* ── trouble states ── */}
       {overspent && (
         <div className="banner warn">
@@ -106,16 +121,6 @@ export default function Dashboard() {
           <div className="v">{dash.nextIncomeDate ? `${dash.daysToPay}d` : '-'}</div>
           <div className="h">{dash.nextIncomeDate ? shortDate(dash.nextIncomeDate) : 'no income set up yet'}</div>
         </div>
-      </div>
-
-      {/* ── quick actions ── */}
-      <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
-        <button className="btn btn-primary" onClick={() => setSheet('expense')} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-          <IconPlus style={{ width: 18, height: 18 }} /> Log a spend
-        </button>
-        <button className="btn" onClick={() => setSheet('canispend')}>
-          Can I spend…?
-        </button>
       </div>
 
       {/* ── loan-survival mode ── */}

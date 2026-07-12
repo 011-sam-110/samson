@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { IconClose, IconSun, IconMoon } from './icons.jsx'
+import { IconClose } from './icons.jsx'
 
 // Bottom-sheet / modal dialog. Closes on backdrop click or Escape.
 export function Sheet({ title, onClose, children }) {
@@ -84,24 +84,4 @@ export function useCountUp(target, ms = 700) {
     return () => cancelAnimationFrame(raf)
   }, [target, ms])
   return val
-}
-
-// Theme switch. Rendered twice — in the sidebar on desktop, floating over the
-// page on mobile where there is no sidebar — so it takes theme/toggle as props
-// from a single useTheme() in the shell. Two useTheme() calls would each keep
-// their own state and drift apart.
-export function ThemeToggle({ theme, toggle, className = 'theme-toggle', label = true }) {
-  const dark = theme === 'dark'
-  return (
-    <button
-      className={className}
-      onClick={toggle}
-      aria-pressed={dark}
-      aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'}
-      title={dark ? 'Switch to light mode' : 'Switch to dark mode'}
-    >
-      {dark ? <IconSun /> : <IconMoon />}
-      {label && <span>{dark ? 'Light mode' : 'Dark mode'}</span>}
-    </button>
-  )
 }

@@ -1,23 +1,18 @@
-import { useRef } from 'react'
-import { useStore } from '../store/store.js'
-import { serializeState, parseBackup, backupFilename, downloadJSON } from '../lib/backup.js'
-import { ThemeToggle } from './ui.jsx'
-import { IconHome, IconLedger, IconInsights, IconGoals, IconEvents } from './icons.jsx'
+import { IconHome, IconLedger, IconInsights, IconGoals } from './icons.jsx'
 
 // One name per section, used on desktop and mobile alike. The nav label, the
 // page's <h1> and the way we talk about it in copy all say the same word —
 // a sidebar that says "Transactions" and a tab bar that says "Money" is the
 // fastest way to make someone feel lost in their own money app.
 //
-// Five, not six. "Can I spend?" was a tab, but it isn't a place — it's a question
-// about today's number, so it opens as a sheet from Today and the tab bar gets a
-// column back.
+// Four. "Can I spend?" was never a place, so it became a sheet on Today. And
+// "Planned" was really just goals with a date attached — money you've promised
+// away — so it moved inside Goals rather than competing with it for a column.
 const ITEMS = [
   { key: 'home', label: 'Today', Icon: IconHome },
   { key: 'money', label: 'Transactions', Icon: IconLedger },
   { key: 'insights', label: 'Insights', Icon: IconInsights },
   { key: 'goals', label: 'Goals', Icon: IconGoals },
-  { key: 'events', label: 'Planned', Icon: IconEvents },
 ]
 
 // The dial, in miniature. Every stroke is a theme token, so the mark flips with
@@ -35,33 +30,15 @@ export function BrandMark(props) {
   )
 }
 
-export default function Nav({ view, onNavigate, theme, onToggleTheme }) {
-  const { state, actions } = useStore()
-  const fileRef = useRef(null)
-
-  const onExport = () => downloadJSON(backupFilename(), serializeState(state))
-
-  const onImportFile = (e) => {
-    const file = e.target.files?.[0]
-    e.target.value = '' // let the same file be picked again later
-    if (!file) return
-    const reader = new FileReader()
-    reader.onload = () => {
-      try {
-        const obj = parseBackup(String(reader.result))
-        if (confirm('Import this backup? It replaces everything currently in Leeway.')) {
-          actions.importData(obj)
-        }
-      } catch (err) {
-        alert(err.message)
-      }
-    }
-    reader.readAsText(file)
-  }
-
+export default function Nav({ view, onNavigate }) {
   const links = () =>
     ITEMS.map(({ key, label, Icon }) => (
-      <button key={key} className={`navlink ${view === key ? 'active' : ''}`} onClick={() => onNavigate(key)} aria-current={view === key ? 'page' : undefined}>
+      <button
+        key={key}
+        className={`navlink ${view === key ? 'active' : ''}`}
+        onClick={() => onNavigate(key)}
+        aria-current={view === key ? 'page' : undefined}
+      >
         <Icon />
         <span>{label}</span>
       </button>
@@ -77,19 +54,6 @@ export default function Nav({ view, onNavigate, theme, onToggleTheme }) {
           </span>
         </div>
         {links()}
-        <div className="sidebar-foot">
-          <ThemeToggle theme={theme} toggle={onToggleTheme} />
-          <button className="linkish" onClick={onExport}>
-            Export data
-          </button>
-          <button className="linkish" onClick={() => fileRef.current?.click()}>
-            Import data
-          </button>
-          <input ref={fileRef} type="file" accept="application/json,.json" hidden onChange={onImportFile} />
-          <button className="linkish" onClick={() => confirm('Reset back to the demo data?') && actions.resetDemo()}>
-            Reset demo data
-          </button>
-        </div>
       </aside>
 
       <nav className="bottomnav">{links()}</nav>

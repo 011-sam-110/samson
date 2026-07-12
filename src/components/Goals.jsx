@@ -4,7 +4,14 @@ import { goalProgress } from '../engine/finance.js'
 import { gbp, pct, shortDate } from '../lib/format.js'
 import { Sheet } from './ui.jsx'
 import { GoalForm, ContributeForm } from './forms.jsx'
+import PlannedSpends from './PlannedSpends.jsx'
 import { IconPlus, IconTrash, IconCheck } from './icons.jsx'
+
+// Goals and planned spends are one screen, because they are one idea: money you
+// have already promised to something that isn't today. A goal points at a laptop,
+// a plan points at a birthday, and both are quietly subtracted from the number on
+// Today. Splitting them across two tabs asked the user to know a distinction the
+// engine doesn't make.
 
 export default function Goals() {
   const { state, actions } = useStore()
@@ -16,20 +23,25 @@ export default function Goals() {
   return (
     <div>
       <div className="page-head">
-        <div className="eyebrow">Saving up</div>
+        <div className="eyebrow">Promised elsewhere</div>
         <h1>Goals</h1>
         <p>
           {state.goals.length > 0
             ? `Held back from your safe-to-spend: ${gbp(totalWeekly)}/week across ${state.goals.length} goal${
                 state.goals.length > 1 ? 's' : ''
-              }.`
-            : 'Set a target and Leeway quietly works the weekly saving into your safe-to-spend.'}
+              }, plus anything you've planned for below.`
+            : 'Set a target and Leeway quietly works the weekly saving into your safe-to-spend. Big nights out go in below.'}
         </p>
       </div>
 
-      <button className="btn btn-primary" onClick={() => setAdding(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 16 }}>
-        <IconPlus style={{ width: 18, height: 18 }} /> New goal
-      </button>
+      <div className="section-head">
+        <div className="section-title" style={{ margin: 0 }}>
+          Saving up
+        </div>
+        <button className="btn btn-sm" onClick={() => setAdding(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          <IconPlus style={{ width: 16, height: 16 }} /> New goal
+        </button>
+      </div>
 
       <div className="grid">
         {state.goals.length === 0 && (
@@ -88,6 +100,8 @@ export default function Goals() {
           )
         })}
       </div>
+
+      <PlannedSpends />
 
       {adding && (
         <Sheet title="New goal" onClose={() => setAdding(false)}>

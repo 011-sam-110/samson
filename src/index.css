@@ -76,6 +76,8 @@
   --aqua-edge: color-mix(in srgb, var(--aqua) 45%, var(--surface));
   --coral-edge: color-mix(in srgb, var(--coral) 40%, var(--surface));
   --rasp-edge: color-mix(in srgb, var(--rasp) 35%, var(--surface));
+  --violet-edge: color-mix(in srgb, var(--violet) 30%, var(--surface));
+  --pink-edge: color-mix(in srgb, var(--pink) 50%, var(--surface));
 
   /* semantic aliases — the gauge/verdict traffic light, in-palette.
      aqua = under the safe line · coral = a touch over · raspberry = speeding */
@@ -154,6 +156,8 @@
   --aqua-edge: color-mix(in srgb, var(--aqua) 38%, var(--surface));
   --coral-edge: color-mix(in srgb, var(--coral) 38%, var(--surface));
   --rasp-edge: color-mix(in srgb, var(--rasp) 42%, var(--surface));
+  --violet-edge: color-mix(in srgb, var(--violet) 55%, var(--surface));
+  --pink-edge: color-mix(in srgb, var(--pink) 34%, var(--surface));
 
   --shadow: 0 1px 2px color-mix(in srgb, #000 40%, transparent),
     0 8px 24px color-mix(in srgb, #000 45%, transparent);
@@ -301,14 +305,6 @@ input[type='number'] {
   box-shadow: var(--glow-aqua);
 }
 
-.sidebar-foot {
-  margin-top: auto;
-  padding: 8px;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 4px;
-}
 .linkish {
   background: none;
   border: none;
@@ -352,30 +348,166 @@ input[type='number'] {
   margin-bottom: 8px;
 }
 
-/* ── theme toggle ──────────────────────────────────────────────────────── */
-.theme-toggle {
+/* ── top bar + account menu ────────────────────────────────────────────────
+   Export/import/reset used to live in the sidebar footer, which meant that on
+   mobile — where there is no sidebar — they simply did not exist. The account
+   button carries them on both, which is also where every other finance app has
+   trained people to look for them. */
+.topbar {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  background: none;
-  border: none;
-  color: var(--muted);
-  font-size: 12.5px;
-  padding: 4px 0;
-  text-align: left;
-}
-.theme-toggle svg {
-  width: 15px;
-  height: 15px;
-  flex: none;
-}
-.theme-toggle:hover {
-  color: var(--brand-ink);
+  justify-content: flex-end;
+  margin-bottom: 18px;
 }
 
-/* on mobile the sidebar is gone, so the toggle floats over the page head */
-.theme-toggle-float {
-  display: none;
+.account {
+  position: relative;
+}
+.account-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 6px 14px 6px 6px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 13.5px;
+  font-weight: 600;
+  box-shadow: var(--shadow);
+  transition: border-color 0.16s, background 0.16s;
+}
+.account-btn:hover,
+.account-btn.open {
+  background: var(--surface-2);
+  border-color: var(--violet-edge);
+}
+.account-avatar {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--r-pill);
+  background: var(--violet);
+  color: var(--on-violet); /* violet is the one fill dark enough to take white */
+  flex: none;
+}
+.account-avatar svg {
+  width: 17px;
+  height: 17px;
+}
+
+.menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 50;
+  width: 268px;
+  padding: 6px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  box-shadow: var(--shadow-lift);
+  animation: rise 0.16s cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+.menu-head {
+  padding: 10px 12px 12px;
+}
+.menu-title {
+  font-weight: 700;
+  font-size: 14px;
+}
+.menu-sub {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.menu-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  width: 100%;
+  padding: 9px 12px;
+  border: none;
+  background: none;
+  border-radius: var(--r-sm);
+  text-align: left;
+  color: var(--ink);
+  font-size: 13.5px;
+  font-weight: 600;
+}
+.menu-item:hover {
+  background: var(--violet-soft);
+}
+.menu-item svg {
+  width: 17px;
+  height: 17px;
+  flex: none;
+  margin-top: 1px;
+  color: var(--brand-ink);
+}
+.menu-item span {
+  display: block;
+  min-width: 0;
+}
+.menu-item em {
+  display: block;
+  font-style: normal;
+  font-weight: 400;
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 1px;
+}
+.menu-sep {
+  height: 1px;
+  background: var(--line);
+  margin: 6px 4px;
+}
+
+/* ── settings sheet rows ───────────────────────────────────────────────── */
+.set-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 4px 0 14px;
+}
+.set-row + .set-row,
+.menu-sep + .set-row {
+  padding-top: 14px;
+}
+.set-meta .t {
+  font-weight: 700;
+  font-size: 14.5px;
+}
+.set-meta .s {
+  font-size: 12.5px;
+  color: var(--muted);
+  margin-top: 3px;
+  line-height: 1.45;
+  max-width: 34ch;
+}
+/* raspberry is the palette's warning fill; on a light tint the label stays ink */
+.btn-danger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--rasp-soft);
+  border-color: var(--rasp-edge);
+  color: var(--ink);
+  flex: none;
+}
+.btn-danger:hover {
+  background: color-mix(in srgb, var(--rasp) 24%, var(--surface));
+  border-color: var(--rasp);
+}
+
+/* ── a section title with an action parked on its right ────────────────── */
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 26px 0 10px;
 }
 
 /* ── cards ─────────────────────────────────────────────────────────────── */
@@ -658,36 +790,32 @@ input[type='number'] {
   gap: 14px;
   margin-top: 16px;
 }
+/* The tiles are readouts, not buttons. They used to lift 2px on hover, which
+   promised a click that never came — and they carried their colour as a 3px
+   spine down the left edge, a hint of the palette rather than the thing itself.
+   Now the whole tile is washed in its colour: the tint is the hue dissolved into
+   the current surface, so it comes out pastel on paper and deep on dark without
+   a second rule. Nothing moves. */
 .tile {
   position: relative;
   overflow: hidden;
-  background: var(--surface);
+  background: var(--surface-2);
   border: 1px solid var(--line);
   border-radius: var(--r);
   padding: 16px 18px;
   box-shadow: var(--shadow);
-  transition: transform 0.16s, box-shadow 0.16s;
 }
-.tile:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lift);
+.tile.t-aqua {
+  background: var(--aqua-soft);
+  border-color: var(--aqua-edge);
 }
-.tile::before {
-  /* a slim colour-coded spine, so the three tiles read as an instrument cluster */
-  content: '';
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 3px;
-  background: var(--line);
+.tile.t-violet {
+  background: var(--violet-soft);
+  border-color: var(--violet-edge);
 }
-.tile.t-aqua::before {
-  background: var(--aqua);
-}
-.tile.t-violet::before {
-  background: var(--violet);
-}
-.tile.t-pink::before {
-  background: linear-gradient(180deg, var(--pink), var(--rasp));
+.tile.t-pink {
+  background: var(--pink-soft);
+  border-color: var(--pink-edge);
 }
 .tile .k {
   font-size: 12.5px;
@@ -711,6 +839,54 @@ input[type='number'] {
 }
 .tile .v.accent {
   color: var(--brand-ink);
+}
+
+/* ── the two actions, directly under the number they move ──────────────────
+   Full brand fills, not tints: these are the only two things on Today you can
+   actually DO, and they should look like it. Violet takes white (6.33:1); aqua
+   is a fill and carries near-black ink (--on-fill). Both hold in either theme,
+   because a fill keeps its hue when the surface flips. */
+.today-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+.act {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px 20px;
+  border: 1px solid transparent;
+  border-radius: var(--r-pill);
+  font-family: var(--f-body);
+  font-size: 14px;
+  font-weight: 700;
+  transition: background 0.16s, box-shadow 0.16s;
+}
+.act:active {
+  transform: translateY(1px);
+}
+.act svg {
+  width: 18px;
+  height: 18px;
+  flex: none;
+}
+.act-violet {
+  background: var(--violet);
+  color: var(--on-violet);
+  box-shadow: var(--glow-violet);
+}
+.act-violet:hover {
+  background: color-mix(in srgb, var(--violet) 86%, #000);
+}
+.act-aqua {
+  background: var(--aqua);
+  color: var(--on-fill);
+  box-shadow: var(--glow-aqua);
+}
+.act-aqua:hover {
+  background: color-mix(in srgb, var(--aqua) 88%, #fff);
 }
 
 /* ── reconcile / warning banners ───────────────────────────────────────── */
@@ -1261,36 +1437,36 @@ input[type='number'] {
   .sidebar {
     display: none;
   }
-  /* the top strip is reserved for the floating toggle — without it the button
-     lands on top of the page's own top-right action (Reconcile balance) */
+  /* the account button is in the flow now, not floating, so the page gets its
+     top padding back */
   .main {
     margin-left: 0;
-    padding: 62px 16px 96px;
+    padding: 18px 16px 96px;
   }
   .tiles {
     grid-template-columns: 1fr;
   }
 
-  .theme-toggle-float {
+  /* Thumb targets. On a phone these are the whole point of the screen: two
+     slabs you can hit without looking, in the two brand colours, stacked icon
+     over label so the words stay legible at any width. */
+  .today-actions {
     display: grid;
-    place-items: center;
-    position: fixed;
-    top: 12px;
-    right: 12px;
-    z-index: 30;
-    width: 38px;
-    height: 38px;
-    padding: 0;
-    gap: 0;
-    border-radius: var(--r-pill);
-    border: 1px solid var(--line);
-    background: var(--surface);
-    color: var(--ink-2);
-    box-shadow: var(--shadow);
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
   }
-  .theme-toggle-float svg {
-    width: 17px;
-    height: 17px;
+  .act {
+    flex-direction: column;
+    gap: 9px;
+    min-height: 106px;
+    padding: 20px 10px;
+    border-radius: var(--r-lg);
+    font-size: 15px;
+    letter-spacing: -0.01em;
+  }
+  .act svg {
+    width: 26px;
+    height: 26px;
   }
 
   .bottomnav {
@@ -1306,9 +1482,9 @@ input[type='number'] {
   .bottomnav .navlink {
     flex-direction: column;
     gap: 3px;
-    padding: 6px 1px;
-    /* "Transactions" is the longest label and has to survive a 5-up bar */
-    font-size: 9.5px;
+    padding: 6px 2px;
+    /* a 4-up bar now, so "Transactions" finally has room to be read */
+    font-size: 10.5px;
     font-weight: 600;
     letter-spacing: -0.01em;
     text-align: center;
