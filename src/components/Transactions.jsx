@@ -4,6 +4,7 @@ import { gbp, shortDate } from '../lib/format.js'
 import { typeOf, categoryLabel } from '../lib/categories.js'
 import { Sheet } from './ui.jsx'
 import { ExpenseForm, IncomeForm } from './forms.jsx'
+import ImportSheet from './ImportSheet.jsx'
 import { IconPlus, IconTrash } from './icons.jsx'
 
 function Avatar({ label, cls }) {
@@ -30,6 +31,9 @@ export default function Transactions() {
         </button>
         <button className="btn" onClick={() => setSheet('income')} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
           <IconPlus style={{ width: 18, height: 18 }} /> Income
+        </button>
+        <button className="btn" onClick={() => setSheet('import')}>
+          Import screenshot
         </button>
       </div>
 
@@ -105,6 +109,11 @@ export default function Transactions() {
       {sheet === 'income' && (
         <Sheet title="Add income" onClose={() => setSheet(null)}>
           <IncomeForm onDone={() => setSheet(null)} />
+        </Sheet>
+      )}
+      {sheet === 'import' && (
+        <Sheet title="Import from a screenshot" onClose={() => setSheet(null)}>
+          <ImportSheet onDone={() => setSheet(null)} />
         </Sheet>
       )}
     </div>

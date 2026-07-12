@@ -23,6 +23,8 @@ const PERIODS = [
 export default function Insights() {
   const { state } = useStore()
   const [period, setPeriod] = useState('month')
+  const [tip, setTip] = useState(null)
+  const [tipState, setTipState] = useState('idle') // idle | loading | error
   const asOf = new Date()
   const txns = state.transactions || []
   const { from, to } = periodRange(period, asOf)
@@ -45,6 +47,35 @@ export default function Insights() {
 
   const expenseCount = txns.filter((t) => t.type === 'expense').length
   const enoughData = expenseCount >= 3
+
+  const getTip = async () => {
+    setTipState('loading')
+    try {
+      const facts = {
+        period: period === 'month' ? 'this month' : 'the last 30 days',
+        totalSpent: Math.round(total),
+        topCategory: topDiscretionary?.label ?? null,
+        topCategoryTotal: topDiscretionary ? Math.round(topDiscretionary.total) : null,
+        weekdayPerDay: Math.round(split.weekdayPerDay),
+        weekendPerDay: Math.round(split.weekendPerDay),
+        thisWeek: Math.round(trend.thisWeek),
+        fourWeekAvg: Math.round(trend.fourWeekAvg),
+        goal: topGoal?.g.label ?? null,
+        goalWeekly: topGoal ? Math.round(topGoal.p.weeklyRequired) : null,
+      }
+      const res = await fetch('/api/tips', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ facts }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'failed')
+      setTip(data.tip)
+      setTipState('idle')
+    } catch {
+      setTipState('error')
+    }
+  }
 
   return (
     <div>
@@ -76,6 +107,29 @@ export default function Insights() {
 
       {enoughData && (
         <>
+          <div className="section-title">Smart tip</div>
+          <div className="card card-pad">
+            {tip ? (
+              <div className="banner info" style={{ margin: 0 }}>
+                <IconInfo />
+                <div>{tip}</div>
+              </div>
+            ) : (
+              <div className="row" style={{ alignItems: 'center' }}>
+                <div className="meta">
+                  <div className="t" style={{ fontWeight: 700 }}>Want a hand?</div>
+                  <div className="s">Leeway can look at your spending and suggest one thing to cut.</div>
+                </div>
+                <button className="btn btn-primary btn-sm" onClick={getTip} disabled={tipState === 'loading'}>
+                  {tipState === 'loading' ? 'Thinking…' : 'Get a tip'}
+                </button>
+              </div>
+            )}
+            {tipState === 'error' && (
+              <p style={{ color: 'var(--over)', fontSize: 13, marginTop: 8 }}>Couldn't get a tip right now - check your API key.</p>
+            )}
+          </div>
+
           <div className="section-title">Where it goes</div>
           <div className="card card-pad">
             {cats.length === 0 ? (

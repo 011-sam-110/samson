@@ -89,6 +89,24 @@ export function StoreProvider({ children }) {
       // Loan-survival: the date a lump (loan/grant) must last you until. null clears it.
       setSurviveUntil: (date) => patch(() => ({ surviveUntil: date || null })),
 
+      // Bulk import of historical transactions (from a statement screenshot). These
+      // already happened and are reflected in the real balance, so DON'T move the balance.
+      importTransactions: (rows) =>
+        setState((s) => ({
+          ...s,
+          transactions: [
+            ...rows.map((r) => ({
+              id: uid(),
+              type: (Number(r.amount) || 0) >= 0 ? 'income' : 'expense',
+              label: r.merchant || 'Imported',
+              amount: Math.abs(Number(r.amount) || 0),
+              category: r.category || 'other',
+              date: r.date,
+            })),
+            ...s.transactions,
+          ],
+        })),
+
       removeTransaction: (id) => remove('transactions', id),
       removeBill: (id) => remove('bills', id),
       removeIncome: (id) => remove('incomeSources', id),

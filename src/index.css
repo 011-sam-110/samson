@@ -549,6 +549,69 @@ select {
   gap: 8px;
 }
 
+/* ── import review ─────────────────────────────────────────────────────── */
+.import-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 46vh;
+  overflow-y: auto;
+  margin-top: 4px;
+}
+.import-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 4px;
+  border-bottom: 1px solid var(--line);
+}
+.import-row.off {
+  opacity: 0.4;
+}
+.import-main {
+  flex: 1;
+  min-width: 0;
+}
+.import-merchant {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.import-sub {
+  font-size: 12px;
+  color: var(--muted);
+}
+.import-row select {
+  font: inherit;
+  font-size: 12px;
+  padding: 4px 6px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  color: var(--ink);
+  max-width: 120px;
+}
+.import-tag {
+  font-size: 12px;
+  color: #1f5fb0;
+  background: #e4f0ff;
+  padding: 3px 8px;
+  border-radius: var(--r-pill);
+}
+.import-amt {
+  font-size: 14px;
+  color: var(--ink);
+  white-space: nowrap;
+  min-width: 64px;
+  text-align: right;
+}
+.import-amt.pos {
+  color: #0c7a52;
+}
+
 /* ── insights + charts ─────────────────────────────────────────────────── */
 .insights-top {
   display: flex;
