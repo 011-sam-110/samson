@@ -1,6 +1,6 @@
 import { LEGACY_TYPE_TO_CATEGORY } from '../lib/categories.js'
 
-export const CURRENT_VERSION = 2
+export const CURRENT_VERSION = 3
 
 // Pure, ordered state migrations. Each step upgrades exactly one version so old
 // localStorage data is never wiped on a schema change.
@@ -8,7 +8,13 @@ export function migrate(state) {
   if (!state || typeof state !== 'object') return state
   let s = state
   if ((s.version ?? 1) < 2) s = toV2(s)
+  if ((s.version ?? 1) < 3) s = toV3(s)
   return s
+}
+
+// v3 introduces the term calendar (M5). Old data simply gains an empty term list.
+function toV3(s) {
+  return { ...s, version: 3, termSpans: Array.isArray(s.termSpans) ? s.termSpans : [] }
 }
 
 // v1 stored the spending type ('fixed'|'variable'|'discretionary') in each

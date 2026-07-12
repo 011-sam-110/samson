@@ -42,6 +42,19 @@ describe('migrate', () => {
     expect(migrate(v2)).toEqual(v2)
   })
 
+  it('v2 → v3 adds an empty termSpans array', () => {
+    const v2 = { version: 2, balance: 0, transactions: [], bills: [], goals: [], events: [], incomeSources: [] }
+    const out = migrate(v2)
+    expect(out.version).toBe(3)
+    expect(out.termSpans).toEqual([])
+  })
+
+  it('keeps an existing termSpans array through migration', () => {
+    const span = { id: 'a', kind: 'freshers', label: 'Freshers', start: '2026-09-21', end: '2026-09-27' }
+    const out = migrate({ version: 3, termSpans: [span], transactions: [] })
+    expect(out.termSpans).toEqual([span])
+  })
+
   it('does not throw on non-object input', () => {
     expect(migrate(null)).toBe(null)
     expect(migrate(undefined)).toBe(undefined)

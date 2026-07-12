@@ -86,6 +86,9 @@ export function StoreProvider({ children }) {
 
       addEvent: ({ label, amount, date }) => push('events', { label, amount: Number(amount) || 0, date }),
 
+      // Term calendar (M5): named date spans (Freshers/exams/term) the calendar highlights.
+      addTermSpan: ({ kind, label, start, end }) => push('termSpans', { kind, label: (label || '').trim(), start, end }),
+
       // Loan-survival: the date a lump (loan/grant) must last you until. null clears it.
       setSurviveUntil: (date) => patch(() => ({ surviveUntil: date || null })),
 
@@ -112,18 +115,20 @@ export function StoreProvider({ children }) {
       removeIncome: (id) => remove('incomeSources', id),
       removeGoal: (id) => remove('goals', id),
       removeEvent: (id) => remove('events', id),
+      removeTermSpan: (id) => remove('termSpans', id),
 
       importData: (obj) => setState(() => migrate(obj)),
       resetDemo: () => setState(defaultState()),
       clearAll: () =>
         setState({
-          version: 1,
+          version: 3,
           balance: 0,
           lastReconciled: todayISO(),
           incomeSources: [],
           bills: [],
           goals: [],
           events: [],
+          termSpans: [],
           transactions: [],
         }),
     }

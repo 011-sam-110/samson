@@ -17,7 +17,7 @@ function iso(offsetDays) {
 
 export function defaultState() {
   return {
-    version: 2,
+    version: 3,
     balance: 512.4,
     lastReconciled: iso(-2),
     incomeSources: [
@@ -34,6 +34,12 @@ export function defaultState() {
       { id: uid(), label: 'New laptop', target: 900, saved: 300, deadline: iso(210) },
     ],
     events: [{ id: uid(), label: "Ross's birthday", amount: 55, date: iso(5) }],
+    // Illustrative term dates (relative to today) so the calendar's nudge + tints
+    // are alive on first open. Freshers is a few days out; exams later in the term.
+    termSpans: [
+      { id: uid(), kind: 'freshers', label: 'Freshers', start: iso(4), end: iso(10) },
+      { id: uid(), kind: 'exams', label: 'Semester exams', start: iso(45), end: iso(56) },
+    ],
     transactions: [
       { id: uid(), type: 'expense', label: 'Tesco Metro', amount: 23.4, category: 'groceries', date: iso(-1) },
       { id: uid(), type: 'expense', label: 'Pret', amount: 6.8, category: 'coffee', date: iso(-1) },
