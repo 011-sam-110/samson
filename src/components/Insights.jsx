@@ -137,7 +137,7 @@ export default function Insights() {
 
           {leaks.length > 0 && (
             <>
-              <div className="section-title">Small stuff adds up</div>
+              <div className="section-title">What keeps repeating</div>
               <div className="card card-pad">
                 {leaks.map((l) => (
                   <BarRow key={l.key} label={l.label} value={l.total} max={leaks[0].total} note={`${l.count}× · ${gbp(l.avgEach)} each`} />
