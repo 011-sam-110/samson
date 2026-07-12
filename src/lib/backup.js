@@ -9,6 +9,11 @@
 // in English, rather than trusting them and crashing later.
 const ARRAY_KEYS = ['incomeSources', 'bills', 'goals', 'events', 'transactions']
 
+// Collections added after v1 backups existed. Older exports predate them, so a
+// missing key is fine (migration fills it) — but a present value that isn't an
+// array is the same crash class as ARRAY_KEYS and must be rejected here.
+const OPTIONAL_ARRAY_KEYS = ['termSpans']
+
 const NOT_A_BACKUP = "That doesn't look like a Leeway backup."
 
 export function serializeState(state) {
@@ -30,6 +35,9 @@ export function parseBackup(text) {
   }
   for (const k of ARRAY_KEYS) {
     if (!Array.isArray(obj[k])) throw new Error(NOT_A_BACKUP)
+  }
+  for (const k of OPTIONAL_ARRAY_KEYS) {
+    if (k in obj && !Array.isArray(obj[k])) throw new Error(NOT_A_BACKUP)
   }
   return obj
 }

@@ -45,6 +45,22 @@ describe('backup', () => {
     expect(() => parseBackup(JSON.stringify({ ...good, balance: null }))).toThrow(/Leeway backup/)
   })
 
+  // termSpans (M5) is an optional collection: present exports must be an array,
+  // but older backups predate the key and must still import (migration fills it).
+  it('round-trips termSpans through serialize → parse', () => {
+    const span = { id: 'a', kind: 'exams', label: 'Exams', start: '2026-01-12', end: '2026-01-23' }
+    const out = parseBackup(serializeState({ ...good, termSpans: [span] }))
+    expect(out.termSpans).toEqual([span])
+  })
+
+  it('accepts a backup with no termSpans key (older export)', () => {
+    expect(() => parseBackup(serializeState(good))).not.toThrow()
+  })
+
+  it('rejects a backup whose termSpans is present but not an array', () => {
+    expect(() => parseBackup(JSON.stringify({ ...good, termSpans: {} }))).toThrow(/Leeway backup/)
+  })
+
   it('builds a dated filename', () => {
     expect(backupFilename(new Date(2026, 6, 12))).toBe('leeway-backup-2026-07-12.json')
   })
