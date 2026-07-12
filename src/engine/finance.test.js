@@ -163,6 +163,23 @@ describe('sustainable target rate + run rate', () => {
     expect(dash.currentDaily).toBeCloseTo(140 / 14, 4) // only the £70 + £70 discretionary/variable
   })
 
+  it('run rate counts new student categories by their derived type', () => {
+    const state = {
+      balance: 300,
+      incomeSources: [{ id: 'w', kind: 'monthly', amount: 800, nextDate: '2026-02-01' }],
+      bills: [],
+      goals: [],
+      events: [],
+      transactions: [
+        { id: 't1', type: 'expense', category: 'going_out', amount: 40, date: '2025-12-29' }, // discretionary → counts
+        { id: 't2', type: 'expense', category: 'groceries', amount: 30, date: '2025-12-30' }, // variable → counts
+        { id: 't3', type: 'expense', category: 'rent', amount: 500, date: '2025-12-30' }, // fixed → excluded
+      ],
+    }
+    const dash = computeDashboard(state, ASOF, { lookbackDays: 14 })
+    expect(dash.currentDaily).toBeCloseTo(70 / 14, 4)
+  })
+
   it('flags being over-committed when commitments exceed income', () => {
     const state = {
       balance: 100,

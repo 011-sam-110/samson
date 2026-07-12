@@ -10,6 +10,8 @@
 // The rent fix: a recurring bill due AFTER the window still reserves its fair pro-rata
 // slice now, so "£24/day!" never turns into "...oh, rent landed" the day after payday.
 
+import { typeOf } from '../lib/categories.js'
+
 export const DAYS_PER_MONTH = 30.4375 // average Gregorian month
 export const DAYS_PER_WEEK = 7
 
@@ -180,7 +182,7 @@ export function computeDashboard(state, asOf = new Date(), opts = {}) {
   // Run rate: trailing discretionary + variable spend.
   const lookbackStart = addDays(asOf, -lookbackDays)
   const recentSpend = transactions
-    .filter((t) => t.type === 'expense' && (t.category === 'variable' || t.category === 'discretionary'))
+    .filter((t) => t.type === 'expense' && typeOf(t.category) !== 'fixed')
     .filter((t) => {
       const d = toDate(t.date)
       return d > toDate(lookbackStart) && d <= toDate(asOf)
