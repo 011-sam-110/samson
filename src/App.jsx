@@ -1,29 +1,31 @@
 import { useState } from 'react'
 import { StoreProvider } from './store/store.js'
 import { useTheme } from './lib/theme.js'
-import { ThemeToggle } from './components/ui.jsx'
 import Nav from './components/Nav.jsx'
+import AccountMenu from './components/AccountMenu.jsx'
 import Dashboard from './components/Dashboard.jsx'
 import Transactions from './components/Transactions.jsx'
 import Insights from './components/Insights.jsx'
 import Goals from './components/Goals.jsx'
-import Events from './components/Events.jsx'
 
 function Shell() {
   const [view, setView] = useState('home')
-  const { theme, toggle } = useTheme()
+  const { theme, setTheme } = useTheme()
 
   return (
     <div className="app">
-      <Nav view={view} onNavigate={setView} theme={theme} onToggleTheme={toggle} />
-      {/* the sidebar is hidden under 860px, so the toggle needs a home there */}
-      <ThemeToggle theme={theme} toggle={toggle} className="theme-toggle-float" label={false} />
+      <Nav view={view} onNavigate={setView} />
       <main className="main">
+        {/* Account sits in the flow above the page, not floating over it — a fixed
+            button would collide with Today's own top-right action on a narrow window. */}
+        <header className="topbar">
+          <AccountMenu theme={theme} setTheme={setTheme} />
+        </header>
+
         {view === 'home' && <Dashboard />}
         {view === 'money' && <Transactions />}
         {view === 'insights' && <Insights />}
         {view === 'goals' && <Goals />}
-        {view === 'events' && <Events />}
       </main>
     </div>
   )

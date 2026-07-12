@@ -50,18 +50,17 @@ export function useTheme() {
     return () => mq.removeEventListener('change', onChange)
   }, [pinned])
 
-  const toggle = useCallback(() => {
-    setTheme((t) => {
-      const next = t === 'dark' ? 'light' : 'dark'
-      try {
-        localStorage.setItem(KEY, next)
-      } catch {
-        /* private mode — the choice still holds for this session */
-      }
-      setPinned(true)
-      return next
-    })
+  // Picking a theme pins it: from here on the OS no longer gets a vote.
+  const choose = useCallback((next) => {
+    if (next !== 'light' && next !== 'dark') return
+    try {
+      localStorage.setItem(KEY, next)
+    } catch {
+      /* private mode — the choice still holds for this session */
+    }
+    setPinned(true)
+    setTheme(next)
   }, [])
 
-  return { theme, toggle }
+  return { theme, setTheme: choose }
 }

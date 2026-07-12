@@ -6,7 +6,12 @@ import { Sheet } from './ui.jsx'
 import { EventForm } from './forms.jsx'
 import { IconPlus, IconTrash } from './icons.jsx'
 
-export default function Events() {
+// A section, not a page. Planned spends stopped being their own tab because they
+// are the same promise a goal is — money already committed, just pointing at a
+// night out instead of a laptop. Both get held back from today's number, so both
+// belong on the screen that explains what's being held back and why.
+
+export default function PlannedSpends() {
   const { state, actions } = useStore()
   const [adding, setAdding] = useState(false)
 
@@ -17,16 +22,19 @@ export default function Events() {
   const totalPlanned = upcoming.reduce((s, e) => s + Number(e.amount || 0), 0)
 
   return (
-    <div>
-      <div className="page-head">
-        <div className="eyebrow">Coming up</div>
-        <h1>Planned spends</h1>
-        <p>Flag the big nights and trips. Leeway sets the money aside now so they don't blow up your week.</p>
+    <>
+      <div className="section-head">
+        <div className="section-title" style={{ margin: 0 }}>
+          Planned spends
+        </div>
+        <button
+          className="btn btn-sm"
+          onClick={() => setAdding(true)}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+        >
+          <IconPlus style={{ width: 16, height: 16 }} /> Plan a spend
+        </button>
       </div>
-
-      <button className="btn btn-primary" onClick={() => setAdding(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 16 }}>
-        <IconPlus style={{ width: 18, height: 18 }} /> Plan a spend
-      </button>
 
       {upcoming.length > 0 && (
         <p style={{ color: 'var(--muted)', fontSize: 14, margin: '0 0 12px' }}>
@@ -61,6 +69,6 @@ export default function Events() {
           <EventForm onDone={() => setAdding(false)} />
         </Sheet>
       )}
-    </div>
+    </>
   )
 }
