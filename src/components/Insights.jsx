@@ -13,6 +13,7 @@ import {
 import { goalProgress } from '../engine/finance.js'
 import { gbp, gbpWhole, pct } from '../lib/format.js'
 import { BarRow, SplitBar } from './charts.jsx'
+import Calendar from './Calendar.jsx'
 import { IconInfo, IconAlert } from './icons.jsx'
 
 const PERIODS = [
@@ -99,6 +100,13 @@ export default function Insights() {
           <div className="lbl">Spent this period</div>
           <div className="amt2 mono">{gbp(total)}</div>
         </div>
+      </div>
+
+      {/* Calendar sits above the analytics gate so it shows even with sparse data —
+          it's also where term dates get set and upcoming bills/events are seen. */}
+      <div className="section-title">Spending calendar</div>
+      <div className="card card-pad">
+        <Calendar />
       </div>
 
       {!enoughData && (
