@@ -17,7 +17,7 @@ function iso(offsetDays) {
 
 export function defaultState() {
   return {
-    version: 1,
+    version: 2,
     balance: 512.4,
     lastReconciled: iso(-2),
     incomeSources: [
@@ -35,17 +35,17 @@ export function defaultState() {
     ],
     events: [{ id: uid(), label: "Ross's birthday", amount: 55, date: iso(5) }],
     transactions: [
-      { id: uid(), type: 'expense', label: 'Tesco Metro', amount: 23.4, category: 'variable', date: iso(-1) },
-      { id: uid(), type: 'expense', label: 'Pret', amount: 6.8, category: 'discretionary', date: iso(-1) },
-      { id: uid(), type: 'expense', label: 'Night bus', amount: 5, category: 'variable', date: iso(-2) },
-      { id: uid(), type: 'expense', label: 'Spoons round', amount: 18.5, category: 'discretionary', date: iso(-3) },
-      { id: uid(), type: 'income', label: 'Sold textbook', amount: 25, category: 'discretionary', date: iso(-4) },
-      { id: uid(), type: 'expense', label: 'Big shop', amount: 31.2, category: 'variable', date: iso(-4) },
-      { id: uid(), type: 'expense', label: 'Cinema', amount: 12, category: 'discretionary', date: iso(-5) },
-      { id: uid(), type: 'expense', label: 'Coffee', amount: 3.6, category: 'discretionary', date: iso(-6) },
-      { id: uid(), type: 'expense', label: 'Deliveroo', amount: 21.4, category: 'discretionary', date: iso(-7) },
-      { id: uid(), type: 'expense', label: 'Bus topup', amount: 10, category: 'variable', date: iso(-9) },
-      { id: uid(), type: 'expense', label: 'Tesco', amount: 27.8, category: 'variable', date: iso(-10) },
+      { id: uid(), type: 'expense', label: 'Tesco Metro', amount: 23.4, category: 'groceries', date: iso(-1) },
+      { id: uid(), type: 'expense', label: 'Pret', amount: 6.8, category: 'coffee', date: iso(-1) },
+      { id: uid(), type: 'expense', label: 'Night bus', amount: 5, category: 'transport', date: iso(-2) },
+      { id: uid(), type: 'expense', label: 'Spoons round', amount: 18.5, category: 'going_out', date: iso(-3) },
+      { id: uid(), type: 'income', label: 'Sold textbook', amount: 25, category: 'other', date: iso(-4) },
+      { id: uid(), type: 'expense', label: 'Big shop', amount: 31.2, category: 'groceries', date: iso(-4) },
+      { id: uid(), type: 'expense', label: 'Cinema', amount: 12, category: 'going_out', date: iso(-5) },
+      { id: uid(), type: 'expense', label: 'Coffee', amount: 3.6, category: 'coffee', date: iso(-6) },
+      { id: uid(), type: 'expense', label: 'Deliveroo', amount: 21.4, category: 'eating_out', date: iso(-7) },
+      { id: uid(), type: 'expense', label: 'Bus topup', amount: 10, category: 'transport', date: iso(-9) },
+      { id: uid(), type: 'expense', label: 'Tesco', amount: 27.8, category: 'groceries', date: iso(-10) },
     ],
   }
 }

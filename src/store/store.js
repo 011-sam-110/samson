@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState, createElement } from 'react'
 import { defaultState } from './seed.js'
+import { migrate } from './migrate.js'
 import { uid } from '../lib/id.js'
 import { computeDashboard } from '../engine/finance.js'
 
@@ -8,7 +9,7 @@ const KEY = 'leeway:v1'
 function load() {
   try {
     const raw = localStorage.getItem(KEY)
-    if (raw) return JSON.parse(raw)
+    if (raw) return migrate(JSON.parse(raw))
   } catch {
     /* corrupt or unavailable - fall through to seed */
   }
@@ -91,6 +92,7 @@ export function StoreProvider({ children }) {
       removeGoal: (id) => remove('goals', id),
       removeEvent: (id) => remove('events', id),
 
+      importData: (obj) => setState(() => migrate(obj)),
       resetDemo: () => setState(defaultState()),
       clearAll: () =>
         setState({
