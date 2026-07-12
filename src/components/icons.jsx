@@ -26,14 +26,6 @@ export const IconGoals = (p) => (
   </svg>
 )
 
-export const IconSpend = (p) => (
-  <svg viewBox="0 0 24 24" {...S} {...p}>
-    <path d="M3 8a2 2 0 0 1 2-2h12l2 3v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-    <path d="M16 12h.01" />
-    <path d="M3 9h14" />
-  </svg>
-)
-
 export const IconEvents = (p) => (
   <svg viewBox="0 0 24 24" {...S} {...p}>
     <rect x="4" y="5" width="16" height="16" rx="2" />

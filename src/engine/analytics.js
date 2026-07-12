@@ -56,17 +56,28 @@ export function spendByCategory(transactions, from, to) {
 }
 
 // ── weekend effect ──────────────────────────────────────────────────────────
-export function weekendSplit(transactions, from, to) {
+// Divide only by the days actually lived through. The default period is the
+// calendar month, whose `to` is the 31st - a date that is still in the future
+// for all but one day of the month. Counting those unlived days as denominator
+// crushed the £/day rates: on the 3rd, a real £10/weekday and £40/weekend day
+// were reported as £0.87 and £5.00, because the spend was spread across 23
+// weekdays and 8 weekend days the student had not reached yet.
+export function weekendSplit(transactions, from, to, asOf = new Date()) {
+  // Both the spend and the day-count are measured over the SAME lived span, so
+  // the rate stays a rate. Clamping only the denominator would be worse than the
+  // bug: it would divide a whole month's spend by the days lived so far.
+  const end = toDate(to) < toDate(asOf) ? toDate(to) : toDate(asOf)
+
   let weekdayTotal = 0
   let weekendTotal = 0
   for (const t of (transactions || []).filter(isNonFixed)) {
-    if (!inRange(t.date, from, to)) continue
+    if (!inRange(t.date, from, end)) continue
     if (WEEKEND.has(toDate(t.date).getDay())) weekendTotal += amt(t)
     else weekdayTotal += amt(t)
   }
   let weekdayCount = 0
   let weekendCount = 0
-  const span = daysBetween(from, to) // inclusive day count = span + 1
+  const span = daysBetween(from, end) // inclusive day count = span + 1; < 0 if the period hasn't started
   for (let i = 0; i <= span; i++) {
     if (WEEKEND.has(addDays(from, i).getDay())) weekendCount++
     else weekdayCount++

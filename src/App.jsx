@@ -7,7 +7,6 @@ import Dashboard from './components/Dashboard.jsx'
 import Transactions from './components/Transactions.jsx'
 import Insights from './components/Insights.jsx'
 import Goals from './components/Goals.jsx'
-import CanISpend from './components/CanISpend.jsx'
 import Events from './components/Events.jsx'
 
 function Shell() {
@@ -20,11 +19,10 @@ function Shell() {
       {/* the sidebar is hidden under 860px, so the toggle needs a home there */}
       <ThemeToggle theme={theme} toggle={toggle} className="theme-toggle-float" label={false} />
       <main className="main">
-        {view === 'home' && <Dashboard onNavigate={setView} />}
+        {view === 'home' && <Dashboard />}
         {view === 'money' && <Transactions />}
         {view === 'insights' && <Insights />}
         {view === 'goals' && <Goals />}
-        {view === 'spend' && <CanISpend />}
         {view === 'events' && <Events />}
       </main>
     </div>

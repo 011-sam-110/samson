@@ -2,18 +2,21 @@ import { useRef } from 'react'
 import { useStore } from '../store/store.js'
 import { serializeState, parseBackup, backupFilename, downloadJSON } from '../lib/backup.js'
 import { ThemeToggle } from './ui.jsx'
-import { IconHome, IconLedger, IconInsights, IconGoals, IconSpend, IconEvents } from './icons.jsx'
+import { IconHome, IconLedger, IconInsights, IconGoals, IconEvents } from './icons.jsx'
 
 // One name per section, used on desktop and mobile alike. The nav label, the
 // page's <h1> and the way we talk about it in copy all say the same word —
 // a sidebar that says "Transactions" and a tab bar that says "Money" is the
 // fastest way to make someone feel lost in their own money app.
+//
+// Five, not six. "Can I spend?" was a tab, but it isn't a place — it's a question
+// about today's number, so it opens as a sheet from Today and the tab bar gets a
+// column back.
 const ITEMS = [
   { key: 'home', label: 'Today', Icon: IconHome },
   { key: 'money', label: 'Transactions', Icon: IconLedger },
   { key: 'insights', label: 'Insights', Icon: IconInsights },
   { key: 'goals', label: 'Goals', Icon: IconGoals },
-  { key: 'spend', label: 'Can I spend?', Icon: IconSpend },
   { key: 'events', label: 'Planned', Icon: IconEvents },
 ]
 

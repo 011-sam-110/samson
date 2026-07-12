@@ -98,12 +98,21 @@ export function perDayFromBill(bill) {
 }
 
 // ── goals ─────────────────────────────────────────────────────────────────────
+// A goal only holds money back while it still has days to save into.
+//
+// daysLeft is reported honestly - it can be 0 (due today) or negative (missed).
+// It used to be clamped to a floor of 1, which quietly turned a lapsed goal into
+// a demand for its whole remaining balance EVERY DAY: £420 still to go became a
+// £420/day reserve, £5,880 held back over a fortnight, and a safe-to-spend of
+// minus several hundred pounds a day. You cannot save into yesterday, so once
+// the deadline is gone the goal reserves nothing until the user re-dates it.
+// Goals surfaces it as "Deadline passed" rather than letting it rot silently.
 export function goalProgress(goal, asOf = new Date()) {
   const target = Number(goal.target) || 0
   const saved = Number(goal.saved) || 0
   const remaining = Math.max(target - saved, 0)
-  const daysLeft = Math.max(daysBetween(asOf, goal.deadline), 1)
-  const perDay = remaining / daysLeft
+  const daysLeft = daysBetween(asOf, goal.deadline)
+  const perDay = remaining > 0 && daysLeft > 0 ? remaining / daysLeft : 0
   const weeklyRequired = perDay * DAYS_PER_WEEK
   const pct = target > 0 ? Math.min(saved / target, 1) : 0
   return {
@@ -114,7 +123,8 @@ export function goalProgress(goal, asOf = new Date()) {
     weeklyRequired,
     pct,
     done: remaining === 0,
-    overdue: daysBetween(asOf, goal.deadline) < 0 && remaining > 0,
+    dueToday: daysLeft === 0 && remaining > 0,
+    overdue: daysLeft < 0 && remaining > 0,
   }
 }
 

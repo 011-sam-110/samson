@@ -5,13 +5,14 @@ import { gbp, gbpWhole, pct, shortDate, fullDate } from '../lib/format.js'
 import Gauge, { zoneOf } from './Gauge.jsx'
 import { Sheet, useCountUp } from './ui.jsx'
 import { ExpenseForm, ReconcileForm, SurviveForm } from './forms.jsx'
+import CanISpend from './CanISpend.jsx'
 import { IconAlert, IconInfo, IconPlus } from './icons.jsx'
 
 const ZONE_PILL = { go: 'On track', tight: 'Spending fast', over: 'Too fast' }
 
-export default function Dashboard({ onNavigate }) {
+export default function Dashboard() {
   const { state, dash } = useStore()
-  const [sheet, setSheet] = useState(null) // 'expense' | 'reconcile' | 'survive'
+  const [sheet, setSheet] = useState(null) // 'expense' | 'reconcile' | 'survive' | 'canispend'
   const plan = survivalPlan(state, new Date())
 
   const zone = zoneOf(dash.pacePct, dash.overCommitted)
@@ -112,7 +113,7 @@ export default function Dashboard({ onNavigate }) {
         <button className="btn btn-primary" onClick={() => setSheet('expense')} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
           <IconPlus style={{ width: 18, height: 18 }} /> Log a spend
         </button>
-        <button className="btn" onClick={() => onNavigate('spend')}>
+        <button className="btn" onClick={() => setSheet('canispend')}>
           Can I spend…?
         </button>
       </div>
@@ -231,6 +232,11 @@ export default function Dashboard({ onNavigate }) {
       {sheet === 'survive' && (
         <Sheet title="Make it last" onClose={() => setSheet(null)}>
           <SurviveForm onDone={() => setSheet(null)} />
+        </Sheet>
+      )}
+      {sheet === 'canispend' && (
+        <Sheet title="Can I spend…?" onClose={() => setSheet(null)}>
+          <CanISpend onDone={() => setSheet(null)} />
         </Sheet>
       )}
     </div>

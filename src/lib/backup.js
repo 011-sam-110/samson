@@ -1,7 +1,15 @@
 // Portable JSON backup of the whole app state. Pure helpers are unit-tested;
 // downloadJSON is a thin DOM wrapper (browser only).
 
-const REQUIRED_KEYS = ['balance', 'incomeSources', 'bills', 'goals', 'events', 'transactions']
+// The collections the whole app indexes into. A backup that merely *mentions*
+// these keys isn't enough: `{"transactions": {}}` used to satisfy an `in` check,
+// then blow up on `.map` deep inside migrate() - past the import handler's catch
+// and into a render, which takes the app down with a blank screen. An imported
+// file is untrusted input, so check the shapes here, where we can still say so
+// in English, rather than trusting them and crashing later.
+const ARRAY_KEYS = ['incomeSources', 'bills', 'goals', 'events', 'transactions']
+
+const NOT_A_BACKUP = "That doesn't look like a Leeway backup."
 
 export function serializeState(state) {
   return JSON.stringify(state, null, 2)
@@ -15,10 +23,13 @@ export function parseBackup(text) {
     throw new Error("That file isn't valid JSON.")
   }
   if (!obj || typeof obj !== 'object' || Array.isArray(obj)) {
-    throw new Error("That doesn't look like a Leeway backup.")
+    throw new Error(NOT_A_BACKUP)
   }
-  for (const k of REQUIRED_KEYS) {
-    if (!(k in obj)) throw new Error("That doesn't look like a Leeway backup.")
+  if (typeof obj.balance !== 'number' || !Number.isFinite(obj.balance)) {
+    throw new Error(NOT_A_BACKUP)
+  }
+  for (const k of ARRAY_KEYS) {
+    if (!Array.isArray(obj[k])) throw new Error(NOT_A_BACKUP)
   }
   return obj
 }

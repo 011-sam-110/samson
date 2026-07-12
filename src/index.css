@@ -1095,6 +1095,13 @@ input[type='number'] {
 .sheet-head h3 {
   font-size: 19px;
 }
+/* One line of orientation under a sheet title, where a page would have used a
+   .page-head <p>. */
+.sheet-lede {
+  color: var(--ink-2);
+  font-size: 14px;
+  margin: -6px 0 18px;
+}
 @media (min-width: 640px) {
   .scrim {
     align-items: center;

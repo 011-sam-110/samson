@@ -65,6 +65,8 @@ export default function Goals() {
                     'Fully saved 🎉'
                   ) : p.overdue ? (
                     <>Deadline passed - <b>{gbp(p.remaining)}</b> to go</>
+                  ) : p.dueToday ? (
+                    <>Due today - <b>{gbp(p.remaining)}</b> to go</>
                   ) : (
                     <>
                       <b>{gbp(p.weeklyRequired)}</b>/week · by {shortDate(g.deadline)}

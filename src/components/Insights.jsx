@@ -30,16 +30,18 @@ export default function Insights() {
   const total = totalSpend(txns, from, to)
   const cats = spendByCategory(txns, from, to)
   const maxCat = cats.length ? cats[0].total : 0
-  const split = weekendSplit(txns, from, to)
+  const split = weekendSplit(txns, from, to, asOf)
   const trend = weeklyTrend(txns, asOf)
   const mover = biggestMover(txns, asOf)
   const leaks = recurringSpends(txns, from, to)
 
-  // Top discretionary category → cost against the nearest active goal.
+  // Top discretionary category → cost against the nearest goal still being saved
+  // into. An overdue goal has no weekly rate to price the spend against, and it
+  // sorts to the front on daysLeft, so it has to be excluded rather than ranked.
   const topDiscretionary = cats.find((c) => c.type === 'discretionary')
   const topGoal = (state.goals || [])
     .map((g) => ({ g, p: goalProgress(g, asOf) }))
-    .filter((x) => !x.p.done)
+    .filter((x) => !x.p.done && !x.p.overdue && x.p.weeklyRequired > 0)
     .sort((a, b) => a.p.daysLeft - b.p.daysLeft)[0]
   const goalWeeks = topGoal && topDiscretionary ? costToGoal(topDiscretionary.total, topGoal.p.weeklyRequired) : 0
 
