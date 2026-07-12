@@ -52,6 +52,49 @@ describe('goal reserve', () => {
   it('a fully-saved goal reserves nothing', () => {
     expect(dailyGoalReserve({ target: 600, saved: 600, deadline: '2026-03-12' }, ASOF)).toBe(0)
   })
+
+  // Regression: daysLeft used to be clamped to a floor of 1, so a missed deadline
+  // demanded the whole remaining balance every single day — £420 to go became a
+  // £420/day reserve, and safe-to-spend went hundreds of pounds negative.
+  describe('a deadline that has passed', () => {
+    const lapsed = { target: 600, saved: 180, deadline: '2025-12-25' } // 7 days BEFORE ASOF
+
+    it('reserves nothing — you cannot save into yesterday', () => {
+      expect(dailyGoalReserve(lapsed, ASOF)).toBe(0)
+      expect(goalProgress(lapsed, ASOF).weeklyRequired).toBe(0)
+    })
+
+    it('still reports what is owed, and flags itself as overdue', () => {
+      const p = goalProgress(lapsed, ASOF)
+      expect(p.remaining).toBe(420)
+      expect(p.overdue).toBe(true)
+      expect(p.done).toBe(false)
+      expect(p.daysLeft).toBe(-7) // honest, not floored
+    })
+
+    it('does not blow a hole in safe-to-spend', () => {
+      const state = {
+        balance: 512.4,
+        incomeSources: [{ kind: 'monthly', amount: 780, nextDate: '2026-01-13' }],
+        bills: [],
+        goals: [lapsed],
+        events: [],
+        transactions: [],
+      }
+      const dash = computeDashboard(state, ASOF)
+      expect(dash.goalsReserve).toBe(0)
+      expect(dash.safePerDay).toBeGreaterThan(0) // was ≈ -£393/day
+    })
+  })
+
+  // The day the deadline lands, there are no days left to spread the shortfall
+  // across — but it hasn't been missed yet, so it reads "due today", not "passed".
+  it('a goal due today reserves nothing but is not yet overdue', () => {
+    const p = goalProgress({ target: 600, saved: 180, deadline: ASOF }, ASOF)
+    expect(p.perDay).toBe(0)
+    expect(p.dueToday).toBe(true)
+    expect(p.overdue).toBe(false)
+  })
 })
 
 describe('computeDashboard - reproduces the PRD worked example', () => {

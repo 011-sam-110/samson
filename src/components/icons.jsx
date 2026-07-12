@@ -26,14 +26,6 @@ export const IconGoals = (p) => (
   </svg>
 )
 
-export const IconSpend = (p) => (
-  <svg viewBox="0 0 24 24" {...S} {...p}>
-    <path d="M3 8a2 2 0 0 1 2-2h12l2 3v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-    <path d="M16 12h.01" />
-    <path d="M3 9h14" />
-  </svg>
-)
-
 export const IconEvents = (p) => (
   <svg viewBox="0 0 24 24" {...S} {...p}>
     <rect x="4" y="5" width="16" height="16" rx="2" />
@@ -87,5 +79,18 @@ export const IconInfo = (p) => (
 export const IconCheck = (p) => (
   <svg viewBox="0 0 24 24" {...S} {...p}>
     <path d="M4 12l5 5L20 6" />
+  </svg>
+)
+
+export const IconSun = (p) => (
+  <svg viewBox="0 0 24 24" {...S} {...p}>
+    <circle cx="12" cy="12" r="4" />
+    <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
+  </svg>
+)
+
+export const IconMoon = (p) => (
+  <svg viewBox="0 0 24 24" {...S} {...p}>
+    <path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a6.6 6.6 0 0 0 10.5 10.5z" />
   </svg>
 )

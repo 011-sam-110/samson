@@ -51,12 +51,16 @@ export function ExpenseForm({ onDone }) {
       <Field label="Amount">
         <AmountInput value={amount} onChange={setAmount} />
       </Field>
-      <Field label="Category">
+      <Field
+        label="Category"
+        hint="Rent, bills and subscriptions are reserved separately, so they don't count towards your daily spending pace. Everything else does."
+      >
         <div className="chip-grid">
           {CATEGORIES.map((c) => (
             <button
               type="button"
               key={c.key}
+              aria-pressed={category === c.key}
               className={`btn btn-sm ${category === c.key ? 'btn-primary' : ''}`}
               onClick={() => setCategory(c.key)}
             >

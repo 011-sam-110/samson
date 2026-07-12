@@ -1,17 +1,18 @@
 import { useState } from 'react'
 import { useStore } from '../store/store.js'
 import { daysBetween, survivalPlan } from '../engine/finance.js'
-import { gbp, gbpWhole, pct, shortDate } from '../lib/format.js'
+import { gbp, gbpWhole, pct, shortDate, fullDate } from '../lib/format.js'
 import Gauge, { zoneOf } from './Gauge.jsx'
 import { Sheet, useCountUp } from './ui.jsx'
 import { ExpenseForm, ReconcileForm, SurviveForm } from './forms.jsx'
+import CanISpend from './CanISpend.jsx'
 import { IconAlert, IconInfo, IconPlus } from './icons.jsx'
 
 const ZONE_PILL = { go: 'On track', tight: 'Spending fast', over: 'Too fast' }
 
-export default function Dashboard({ onNavigate }) {
+export default function Dashboard() {
   const { state, dash } = useStore()
-  const [sheet, setSheet] = useState(null) // 'expense' | 'reconcile' | 'survive'
+  const [sheet, setSheet] = useState(null) // 'expense' | 'reconcile' | 'survive' | 'canispend'
   const plan = survivalPlan(state, new Date())
 
   const zone = zoneOf(dash.pacePct, dash.overCommitted)
@@ -25,11 +26,15 @@ export default function Dashboard({ onNavigate }) {
     <div>
       <div className="page-head" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
         <div>
-          <div className="eyebrow">Leeway</div>
-          <h1>What can I spend?</h1>
+          <div className="eyebrow">{fullDate(new Date())}</div>
+          <h1>Today</h1>
         </div>
-        <button className="btn btn-sm" onClick={() => setSheet('reconcile')}>
-          Reconcile
+        <button
+          className="btn btn-sm btn-tinted"
+          onClick={() => setSheet('reconcile')}
+          title="Type in your real bank balance to re-sync Leeway"
+        >
+          Reconcile balance
         </button>
       </div>
 
@@ -58,7 +63,7 @@ export default function Dashboard({ onNavigate }) {
             Now <b>{gbp(dash.currentDaily)}</b>/day
           </span>
           <span>
-            Safe line <b>{gbp(Math.max(dash.targetDaily, 0))}</b>/day
+            Safe rate <b>{gbp(Math.max(dash.targetDaily, 0))}</b>/day
           </span>
           {dash.overCommitted ? <span>commitments over income</span> : <span>at <b>{pct(dash.pacePct)}</b> of pace</span>}
         </div>
@@ -69,7 +74,7 @@ export default function Dashboard({ onNavigate }) {
         <div className="banner warn">
           <IconAlert />
           <div>
-            You're <b>{gbp(dash.overAmount)}</b> short before your next paycheck. Trim to <b>{gbp(dash.recoveryPerDay)}/day</b> to
+            You're <b>{gbp(dash.overAmount)}</b> short before your next payday. Trim to <b>{gbp(dash.recoveryPerDay)}/day</b> to
             claw it back - or push a goal deadline out.
           </div>
         </div>
@@ -86,20 +91,20 @@ export default function Dashboard({ onNavigate }) {
 
       {/* ── instrument tiles ── */}
       <div className="tiles">
-        <div className="tile">
+        <div className="tile t-violet">
           <div className="k">Spending now</div>
           <div className="v">{gbp(dash.currentDaily)}</div>
-          <div className="h">per day · last 14 days</div>
+          <div className="h">per day, averaged over 14 days</div>
         </div>
-        <div className="tile">
-          <div className="k">Safe line</div>
+        <div className="tile t-aqua">
+          <div className="k">Safe rate</div>
           <div className="v accent">{gbp(Math.max(dash.targetDaily, 0))}</div>
-          <div className="h">sustainable per day</div>
+          <div className="h">per day, and you never slip</div>
         </div>
-        <div className="tile">
-          <div className="k">Next paycheck</div>
+        <div className="tile t-pink">
+          <div className="k">Next payday</div>
           <div className="v">{dash.nextIncomeDate ? `${dash.daysToPay}d` : '-'}</div>
-          <div className="h">{dash.nextIncomeDate ? shortDate(dash.nextIncomeDate) : 'no income set'}</div>
+          <div className="h">{dash.nextIncomeDate ? shortDate(dash.nextIncomeDate) : 'no income set up yet'}</div>
         </div>
       </div>
 
@@ -108,7 +113,7 @@ export default function Dashboard({ onNavigate }) {
         <button className="btn btn-primary" onClick={() => setSheet('expense')} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
           <IconPlus style={{ width: 18, height: 18 }} /> Log a spend
         </button>
-        <button className="btn" onClick={() => onNavigate('spend')}>
+        <button className="btn" onClick={() => setSheet('canispend')}>
           Can I spend…?
         </button>
       </div>
@@ -199,8 +204,8 @@ export default function Dashboard({ onNavigate }) {
         {dash.eventsReserve > 0 && (
           <div className="row">
             <div className="meta">
-              <div className="t">Planned events</div>
-              <div className="s">things you've already flagged</div>
+              <div className="t">Planned spends</div>
+              <div className="s">the nights out and trips you've already flagged</div>
             </div>
             <div className="amt neg">-{gbp(dash.eventsReserve)}</div>
           </div>
@@ -210,7 +215,7 @@ export default function Dashboard({ onNavigate }) {
             <div className="t" style={{ fontWeight: 700 }}>Free to spend over {dash.daysToPay} days</div>
             <div className="s">that's your {gbp(dash.safePerDay)}/day</div>
           </div>
-          <div className="amt" style={{ color: 'var(--brand)' }}>{gbp(Math.max(dash.pool, 0))}</div>
+          <div className="amt" style={{ color: 'var(--brand-ink)' }}>{gbp(Math.max(dash.pool, 0))}</div>
         </div>
       </div>
 
@@ -227,6 +232,11 @@ export default function Dashboard({ onNavigate }) {
       {sheet === 'survive' && (
         <Sheet title="Make it last" onClose={() => setSheet(null)}>
           <SurviveForm onDone={() => setSheet(null)} />
+        </Sheet>
+      )}
+      {sheet === 'canispend' && (
+        <Sheet title="Can I spend…?" onClose={() => setSheet(null)}>
+          <CanISpend onDone={() => setSheet(null)} />
         </Sheet>
       )}
     </div>

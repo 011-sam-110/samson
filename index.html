@@ -4,8 +4,27 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="theme-color" content="#5B4BE0" />
+    <!-- browser chrome can't take a color-mix(), so these are the two --bg
+         values resolved by hand: violet at 4% into white / 9% into black -->
+    <meta name="theme-color" content="#faf7fe" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0b0414" media="(prefers-color-scheme: dark)" />
     <meta name="description" content="Leeway - one trusted number that tells UK students what they can safely spend today." />
+    <!-- Set the theme before first paint. Without this, a dark-mode user gets a
+         full white flash while the JS bundle loads. Mirrors resolveTheme() in
+         src/lib/theme.js — keep the two in step. -->
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem('leeway:theme')
+          if (t !== 'light' && t !== 'dark') {
+            t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+          }
+          document.documentElement.dataset.theme = t
+        } catch (e) {
+          document.documentElement.dataset.theme = 'light'
+        }
+      })()
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link

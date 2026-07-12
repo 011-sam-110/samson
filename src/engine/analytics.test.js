@@ -60,13 +60,47 @@ describe('weekendSplit', () => {
   ]
 
   it('splits per-day by the count of each day-type in the window', () => {
-    const s = weekendSplit(txns, '2026-01-05', '2026-01-11')
+    const s = weekendSplit(txns, '2026-01-05', '2026-01-11', ASOF)
     expect(s.weekdayCount).toBe(5)
     expect(s.weekendCount).toBe(2)
     expect(s.weekendTotal).toBe(50)
     expect(s.weekdayTotal).toBe(14)
     expect(s.weekendPerDay).toBeCloseTo(25, 4)
     expect(s.weekdayPerDay).toBeCloseTo(14 / 5, 4)
+  })
+
+  // Regression: the default period is the calendar month, whose `to` is the 31st —
+  // a date still in the future for all but one day of the month. Dividing by days
+  // the student hasn't reached yet crushed the £/day rate to a fraction of the truth.
+  describe('mid-month, with most of the period still unlived', () => {
+    // Jan 2026: 1=Thu, 2=Fri, 3=Sat, 4=Sun, 5=Mon.
+    // As of Mon the 5th the lived span is the 1st–5th: 3 weekdays, 2 weekend days.
+    const monthTxns = [
+      { type: 'expense', category: 'coffee', amount: 9, date: '2026-01-02' }, // Fri
+      { type: 'expense', category: 'groceries', amount: 12, date: '2026-01-05' }, // Mon
+      { type: 'expense', category: 'going_out', amount: 40, date: '2026-01-03' }, // Sat
+      { type: 'expense', category: 'eating_out', amount: 99, date: '2026-01-20' }, // not lived yet
+    ]
+
+    it('divides only by the days lived so far', () => {
+      const s = weekendSplit(monthTxns, '2026-01-01', '2026-01-31', '2026-01-05')
+      expect(s.weekdayCount).toBe(3) // was 22 — the whole month
+      expect(s.weekendCount).toBe(2) // was 9
+      expect(s.weekdayPerDay).toBeCloseTo(21 / 3, 4) // £7/day, not £21/22
+      expect(s.weekendPerDay).toBeCloseTo(40 / 2, 4) // £20/day, not £40/9
+    })
+
+    it('ignores spend dated after today, so the rate stays a rate', () => {
+      const s = weekendSplit(monthTxns, '2026-01-01', '2026-01-31', '2026-01-05')
+      expect(s.weekdayTotal).toBe(21) // the £99 on the 20th is not in the lived span
+    })
+  })
+
+  it('counts nothing when the period has not started yet', () => {
+    const s = weekendSplit(txns, '2026-02-01', '2026-02-28', ASOF)
+    expect(s.weekdayCount).toBe(0)
+    expect(s.weekendCount).toBe(0)
+    expect(s.weekdayPerDay).toBe(0)
   })
 })
 
