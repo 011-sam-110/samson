@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { isoDate, daySpend, heatLevel, billOccurrences, monthMatrix } from './calendar.js'
+import { isoDate, daySpend, heatLevel, billOccurrences, monthMatrix, termSpansOn, termNudge, buildMonth } from './calendar.js'
 
 const tx = (over) => ({ type: 'expense', category: 'going_out', amount: 10, date: '2026-01-10', ...over })
 
@@ -58,5 +58,65 @@ describe('monthMatrix', () => {
     expect(weeks[0][0].date).toBe('2025-12-29') // Monday before Jan 1
     expect(weeks[0][0].inMonth).toBe(false)
     expect(weeks[0][3]).toEqual({ date: '2026-01-01', inMonth: true })
+  })
+})
+
+const fresh = { id: 'f', kind: 'freshers', label: 'Freshers', start: '2026-01-10', end: '2026-01-16' }
+const exams = { id: 'e', kind: 'exams', label: 'Exams', start: '2026-01-20', end: '2026-01-30' }
+
+describe('termSpansOn', () => {
+  it('includes a span on its inclusive edges', () => {
+    expect(termSpansOn([fresh], '2026-01-10')).toHaveLength(1)
+    expect(termSpansOn([fresh], '2026-01-16')).toHaveLength(1)
+  })
+  it('excludes a day outside every span', () => {
+    expect(termSpansOn([fresh], '2026-01-17')).toEqual([])
+  })
+})
+
+describe('termNudge', () => {
+  it('fires a cap message when Freshers is active', () => {
+    const n = termNudge({ termSpans: [fresh] }, '2026-01-12')
+    expect(n.kind).toBe('freshers')
+    expect(n.phase).toBe('active')
+    expect(n.message).toMatch(/cap/i)
+  })
+  it('fires a quiet-mode message for exams starting within 14 days', () => {
+    const n = termNudge({ termSpans: [exams] }, '2026-01-14') // 6 days out
+    expect(n.kind).toBe('exams')
+    expect(n.phase).toBe('upcoming')
+    expect(n.message).toMatch(/bank the difference/i)
+  })
+  it('prefers an active span over an upcoming one', () => {
+    const n = termNudge({ termSpans: [fresh, exams] }, '2026-01-12')
+    expect(n.kind).toBe('freshers')
+  })
+  it('returns null when nothing is active or within 14 days', () => {
+    expect(termNudge({ termSpans: [exams] }, '2026-01-01')).toBe(null) // 19 days out
+    expect(termNudge({ termSpans: [] }, '2026-01-12')).toBe(null)
+  })
+})
+
+describe('buildMonth', () => {
+  const state = {
+    transactions: [{ type: 'expense', category: 'going_out', amount: 20, date: '2026-01-12' }],
+    bills: [{ label: 'Rent', amount: 480, freq: 'monthly', nextDue: '2026-01-18' }],
+    events: [{ label: 'Gig', amount: 30, date: '2026-01-24' }],
+    termSpans: [fresh],
+  }
+  const { weeks } = buildMonth(state, '2026-01-15', '2026-01-15')
+  const cellFor = (iso) => weeks.flat().find((c) => c.date === iso)
+  it('marks discretionary spend and its heat level', () => {
+    expect(cellFor('2026-01-12').spend).toBe(20)
+    expect(cellFor('2026-01-12').heatLevel).toBe(4) // it is the month max
+  })
+  it('attaches bills, events and term spans to the right days', () => {
+    expect(cellFor('2026-01-18').bills[0].label).toBe('Rent')
+    expect(cellFor('2026-01-24').events[0].label).toBe('Gig')
+    expect(cellFor('2026-01-12').terms[0].kind).toBe('freshers')
+  })
+  it('flags today and future cells', () => {
+    expect(cellFor('2026-01-15').isToday).toBe(true)
+    expect(cellFor('2026-01-24').isFuture).toBe(true)
   })
 })
