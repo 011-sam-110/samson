@@ -35,7 +35,7 @@ export function addDays(date, n) {
   return d
 }
 
-function addMonths(date, n) {
+export function addMonths(date, n) {
   const d = toDate(date)
   const targetDay = d.getDate()
   d.setDate(1)
