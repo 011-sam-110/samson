@@ -48,6 +48,12 @@ describe('billOccurrences', () => {
     expect(billOccurrences(one, '2026-01-01', '2026-01-31')).toEqual(['2026-01-10'])
     expect(billOccurrences(one, '2026-02-01', '2026-02-28')).toEqual([])
   })
+  it('keeps a month-end monthly bill on its true day across short months', () => {
+    // Regression: iterating addMonths on the running date dragged the 31st back to
+    // the 28th once it crossed February. Each occurrence must re-clamp from the base.
+    const rent = { freq: 'monthly', nextDue: '2026-01-31' }
+    expect(billOccurrences(rent, '2026-01-01', '2026-04-30')).toEqual(['2026-01-31', '2026-02-28', '2026-03-31', '2026-04-30'])
+  })
 })
 
 describe('monthMatrix', () => {
@@ -95,6 +101,30 @@ describe('termNudge', () => {
     expect(termNudge({ termSpans: [exams] }, '2026-01-01')).toBe(null) // 19 days out
     expect(termNudge({ termSpans: [] }, '2026-01-12')).toBe(null)
   })
+  it('fires exactly at the 14-day horizon but not at 15', () => {
+    expect(termNudge({ termSpans: [exams] }, '2026-01-06').kind).toBe('exams') // 14 days
+    expect(termNudge({ termSpans: [exams] }, '2026-01-05')).toBe(null) // 15 days
+  })
+
+  const term = { id: 't', kind: 'term', label: 'Autumn term', start: '2026-09-01', end: '2026-12-14' }
+  it('warns as a term ends within 14 days', () => {
+    const n = termNudge({ termSpans: [term] }, '2026-12-05') // 9 days to end
+    expect(n.kind).toBe('term')
+    expect(n.phase).toBe('ending')
+    expect(n.message).toMatch(/nearly up/i)
+  })
+  it('points a term-end nudge at Make it last when surviveUntil is set', () => {
+    const n = termNudge({ termSpans: [term], surviveUntil: '2026-12-14' }, '2026-12-05')
+    expect(n.message).toMatch(/Make it last/i)
+  })
+  it('does not nudge for a term with lots of time left', () => {
+    expect(termNudge({ termSpans: [term] }, '2026-10-01')).toBe(null)
+  })
+  it('an active Freshers still beats an ending term', () => {
+    const shortTerm = { id: 't', kind: 'term', label: 'Autumn', start: '2026-09-01', end: '2026-09-20' }
+    const fr = { id: 'f', kind: 'freshers', label: 'Freshers', start: '2026-09-14', end: '2026-09-18' }
+    expect(termNudge({ termSpans: [shortTerm, fr] }, '2026-09-15').kind).toBe('freshers')
+  })
 })
 
 describe('buildMonth', () => {
@@ -118,5 +148,23 @@ describe('buildMonth', () => {
   it('flags today and future cells', () => {
     expect(cellFor('2026-01-15').isToday).toBe(true)
     expect(cellFor('2026-01-24').isFuture).toBe(true)
+  })
+
+  it('scales heat relative to the in-month max and ignores out-of-month spend', () => {
+    const s = {
+      transactions: [
+        { type: 'expense', category: 'going_out', amount: 40, date: '2026-01-20' }, // in-month max
+        { type: 'expense', category: 'going_out', amount: 10, date: '2026-01-06' }, // a quarter of max
+        { type: 'expense', category: 'going_out', amount: 999, date: '2025-12-30' }, // trailing (out-of-month)
+      ],
+      bills: [],
+      events: [],
+      termSpans: [],
+    }
+    const w = buildMonth(s, '2026-01-15', '2026-01-15').weeks.flat()
+    const at = (iso) => w.find((c) => c.date === iso)
+    expect(at('2026-01-20').heatLevel).toBe(4) // if the Dec 30 £999 had set the scale, this would drop below 4
+    expect(at('2026-01-06').heatLevel).toBe(1) // 10 against a max of 40
+    expect(at('2025-12-30').heatLevel).toBe(0) // out-of-month days are never heat-scaled
   })
 })

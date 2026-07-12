@@ -39,22 +39,26 @@ export function billOccurrences(bill, fromISO, toISO) {
   const to = toDate(toISO)
   const base = bill && bill.nextDue
   if (!base) return []
+  const baseDate = toDate(base)
   const freq = bill.freq
   if (freq === 'oneoff' || (freq !== 'weekly' && freq !== 'monthly')) {
-    const d = toDate(base)
-    return d >= from && d <= to ? [isoDate(d)] : []
+    return baseDate >= from && baseDate <= to ? [isoDate(baseDate)] : []
   }
-  const fwd = freq === 'weekly' ? (x) => addDays(x, 7) : (x) => addMonths(x, 1)
-  const back = freq === 'weekly' ? (x) => addDays(x, -7) : (x) => addMonths(x, -1)
-  let d = toDate(base)
+  // Compute each occurrence as an offset from the ORIGINAL due date, so a
+  // month-end day (the 31st) is re-clamped fresh each month (Jan 31 → Feb 28 →
+  // Mar 31), not permanently dragged back to the 28th once it crosses February.
+  const at = freq === 'weekly' ? (k) => addDays(baseDate, 7 * k) : (k) => addMonths(baseDate, k)
+  let k = 0
   let guard = 0
-  while (d > from && guard++ < 1200) d = back(d)
-  while (d < from && guard++ < 1200) d = fwd(d)
+  while (at(k) >= from && guard++ < 6000) k--
+  while (at(k) < from && guard++ < 6000) k++
   const out = []
   guard = 0
-  while (d <= to && guard++ < 1200) {
+  while (guard++ < 6000) {
+    const d = at(k)
+    if (d > to) break
     out.push(isoDate(d))
-    d = fwd(d)
+    k++
   }
   return out
 }
@@ -92,24 +96,46 @@ const SPECIAL = new Set(['freshers', 'exams'])
 export function termNudge(state, asOf = new Date()) {
   const spans = (state && state.termSpans) || []
   const today = toDate(asOf)
+  const surviveUntil = state && state.surviveUntil
   let active = null
   let upcoming = null
+  let termEnding = null
   for (const s of spans) {
-    if (!SPECIAL.has(s.kind)) continue
     const start = toDate(s.start)
     const end = toDate(s.end)
-    if (today >= start && today <= end) {
-      if (!active) active = s
-    } else if (start > today) {
-      const days = daysBetween(today, start)
-      if (days <= 14 && (!upcoming || days < daysBetween(today, upcoming.start))) upcoming = s
+    const isActive = today >= start && today <= end
+    if (SPECIAL.has(s.kind)) {
+      if (isActive) {
+        if (!active) active = s
+      } else if (start > today) {
+        const days = daysBetween(today, start)
+        if (days <= 14 && (!upcoming || days < daysBetween(today, upcoming.start))) upcoming = s
+      }
+    } else if (s.kind === 'term' && isActive) {
+      // A teaching term only nudges as it runs out — that's when money gets tight.
+      const toEnd = daysBetween(today, end)
+      if (toEnd >= 0 && toEnd <= 14 && (!termEnding || toEnd < daysBetween(today, toDate(termEnding.end)))) termEnding = s
     }
   }
+  // Freshers/exams (active, then nearest upcoming) win; a term only speaks as it ends.
   const pick = active || upcoming
-  if (!pick) return null
-  const phase = active ? 'active' : 'upcoming'
-  const daysUntil = phase === 'active' ? 0 : daysBetween(today, pick.start)
-  return { kind: pick.kind, label: pick.label, phase, daysUntil, message: messageFor(pick, phase, daysUntil) }
+  if (pick) {
+    const phase = active ? 'active' : 'upcoming'
+    const daysUntil = phase === 'active' ? 0 : daysBetween(today, pick.start)
+    return { kind: pick.kind, label: pick.label, phase, daysUntil, message: messageFor(pick, phase, daysUntil) }
+  }
+  if (termEnding) {
+    const toEnd = daysBetween(today, toDate(termEnding.end))
+    const tail = surviveUntil ? ' Check "Make it last" on Today to pace what\'s left.' : ''
+    return {
+      kind: 'term',
+      label: termEnding.label,
+      phase: 'ending',
+      daysUntil: toEnd,
+      message: `${termEnding.label} is nearly up — your money's stretching thin.${tail}`,
+    }
+  }
+  return null
 }
 
 function whenPhrase(daysUntil) {
@@ -171,7 +197,9 @@ export function buildMonth(state, anchor, asOf = new Date()) {
         isToday: cell.date === todayISO,
         isFuture: toDate(cell.date) > toDate(todayISO),
         spend,
-        heatLevel: heatLevel(spend, scaleMax),
+        // Only the anchor month is heat-scaled; trailing/leading days belong to
+        // their own month and are shown (heated) when you page to it.
+        heatLevel: cell.inMonth ? heatLevel(spend, scaleMax) : 0,
         bills: billsByDay.get(cell.date) || [],
         events: eventsByDay.get(cell.date) || [],
         terms: termSpansOn(state && state.termSpans, cell.date).map((s) => ({ kind: s.kind, label: s.label })),

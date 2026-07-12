@@ -149,7 +149,7 @@ export default function Calendar() {
               <div className="amt neg">-{gbp(e.amount)}</div>
             </div>
           ))}
-          {selected.spend === 0 && selected.bills.length === 0 && selected.events.length === 0 && (
+          {selected.spend === 0 && selected.bills.length === 0 && selected.events.length === 0 && selected.terms.length === 0 && (
             <div className="empty">Nothing logged or due this day.</div>
           )}
         </Sheet>

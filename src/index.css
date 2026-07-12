@@ -1580,6 +1580,9 @@ input[type='number'] {
 .cal-nudge.nudge-exams {
   border-left: 3px solid var(--aqua-edge);
 }
+.cal-nudge.nudge-term {
+  border-left: 3px solid var(--muted);
+}
 
 .cal-head {
   display: flex;
@@ -1656,9 +1659,12 @@ input[type='number'] {
 }
 .cal-cell.heat-4 {
   background: var(--h4);
-  color: var(--on-violet);
+  /* day number keeps the inherited --ink: on the light-theme h4 fill that clears
+     AA (~4.65:1), where white (--on-violet) fell short (~4.2:1). */
 }
-/* term tint on a separate channel (inset top edge) — never fights the heat fill */
+/* term tint on a separate channel (inset top edge) — never fights the heat fill.
+   Freshers/exams use off-hue edges; term uses a neutral so it doesn't blend into
+   the violet heat fill the way --violet-edge did. */
 .cal-cell.term-freshers {
   box-shadow: inset 0 3px 0 var(--pink-edge);
 }
@@ -1666,7 +1672,7 @@ input[type='number'] {
   box-shadow: inset 0 3px 0 var(--aqua-edge);
 }
 .cal-cell.term-term {
-  box-shadow: inset 0 3px 0 var(--violet-edge);
+  box-shadow: inset 0 3px 0 var(--muted);
 }
 
 .cal-ring,
@@ -1758,7 +1764,7 @@ input[type='number'] {
   background: var(--aqua-edge);
 }
 .cal-term-dot.term-term {
-  background: var(--violet-edge);
+  background: var(--muted);
 }
 
 .cal-detail-terms {
@@ -1781,5 +1787,5 @@ input[type='number'] {
   border-color: var(--aqua-edge);
 }
 .cal-term-chip.term-term {
-  border-color: var(--violet-edge);
+  border-color: var(--muted);
 }

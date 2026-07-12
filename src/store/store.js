@@ -41,8 +41,10 @@ export function StoreProvider({ children }) {
 
   const actions = useMemo(() => {
     const patch = (fn) => setState((s) => ({ ...s, ...fn(s) }))
-    const push = (key, item) => setState((s) => ({ ...s, [key]: [{ id: uid(), ...item }, ...s[key]] }))
-    const remove = (key, id) => setState((s) => ({ ...s, [key]: s[key].filter((x) => x.id !== id) }))
+    // `|| []` guards a collection that a hand-edited or pre-M5 backup can leave
+    // absent — spreading/filtering undefined would crash the whole app.
+    const push = (key, item) => setState((s) => ({ ...s, [key]: [{ id: uid(), ...item }, ...(s[key] || [])] }))
+    const remove = (key, id) => setState((s) => ({ ...s, [key]: (s[key] || []).filter((x) => x.id !== id) }))
 
     return {
       // Balance: log actuals against it so the number stays honest.
