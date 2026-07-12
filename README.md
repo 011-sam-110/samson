@@ -7,9 +7,10 @@ to do the mental maths. Leeway is a windscreen: it answers the only question a s
 at the till - *"can I afford this right now?"* - and keeps that answer honest as life happens (a
 night out, an extra shift, rent looming).
 
-Built from a founding walkthrough + PRD (see `transcript.txt` / `DrunkenGeneratedPRD.md`). This is a
-functional MVP: a client-side React SPA with local persistence - no backend, no accounts, no data
-leaves the browser.
+Built from a founding walkthrough + PRD (see `transcript.txt` / `DrunkenGeneratedPRD.md`). A
+client-side React SPA with local persistence and a light/dark theme. The core is fully offline (no
+accounts, your money data stays in the browser); an **optional** serverless AI layer powers
+screenshot import and cut-back tips (those send the image / a spending summary to an LLM provider).
 
 ---
 
@@ -53,8 +54,13 @@ never a scary negative number.
 | **Today** | The gauge, safe-to-spend, run-rate, next paycheck, and the reserve breakdown |
 | **Transactions** | Recurring income & bills + a ledger of logged one-offs; fast add flow |
 | **Goals** | Targets with auto weekly-required set-aside and progress |
+| **Insights** | Analytics: spend-by-category, week-vs-usual trend, weekend effect, leaks, cost-to-goal, and an AI cut-back tip |
 | **Can I spend?** | Type an amount and get an instant yes / tight / no verdict with the impact |
 | **Planned** | Flag upcoming spends (nights out, trips) so they're reserved ahead of time |
+| **Make it last** | (on Today) Stretch a loan/grant across a whole term - a safe £/day with a weekday/weekend split |
+
+Transactions also has **Import from a screenshot**: upload a bank statement image and the AI extracts
+the rows for you to review and import.
 
 ## Run it
 
@@ -67,11 +73,30 @@ npm run build    # production build to dist/
 
 ## Deploy (Vercel)
 
-Zero-config static deploy - Vercel auto-detects Vite. `vercel.json` sets the SPA rewrite.
-Build command `npm run build`, output `dist/`.
+Vercel auto-detects Vite: build `npm run build`, output `dist/`. `vercel.json` keeps the SPA rewrite
+but excludes `/api` so the serverless functions stay reachable.
 
-Import `github.com/011-sam-110/samson` at vercel.com/new and it builds on every push. No env vars and
-no backend - the whole app runs in the browser.
+### Environment variables
+
+The AI endpoints (`/api/extract`, `/api/tips`) need at least one LLM key, set in the Vercel dashboard
+(**Settings → Environment Variables**). `.env.local` only works locally. The rest of the app runs
+fine with no keys - you just don't get AI import/tips.
+
+| Var | Powers | Get one (free) |
+|---|---|---|
+| `GROQ_API_KEY` | screenshot import (vision) + tips | console.groq.com (no card) |
+| `GEMINI_API_KEY` | optional fallback | aistudio.google.com |
+| `OPENROUTER_API_KEY` | optional fallback | openrouter.ai |
+
+The backend builds a pool from whichever keys are present (in that order) and fails over on rate
+limits. See `.env.example`.
+
+### Collaboration note (Hobby tier)
+
+Vercel Hobby only deploys commits **authored by the account owner**. If a teammate's commit is the
+tip of `main`, the deploy is blocked (*"commit author does not have contributing access"*). Keep it
+free by having the owner **merge the PRs** (the merge commit is then the owner's), or upgrade to Pro /
+move to Cloudflare Pages for true multi-author deploys.
 
 ## Structure
 
