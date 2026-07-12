@@ -53,7 +53,7 @@ never a scary negative number.
 | **Today** | The gauge, safe-to-spend, run-rate, next paycheck, and the reserve breakdown |
 | **Transactions** | Recurring income & bills + a ledger of logged one-offs; fast add flow |
 | **Goals** | Targets with auto weekly-required set-aside and progress |
-| **Can I spend?** | Type an amount → instant yes / tight / no verdict with the impact |
+| **Can I spend?** | Type an amount and get an instant yes / tight / no verdict with the impact |
 | **Planned** | Flag upcoming spends (nights out, trips) so they're reserved ahead of time |
 
 ## Run it
@@ -62,7 +62,7 @@ never a scary negative number.
 npm install
 npm run dev      # http://localhost:5173
 npm test         # engine unit tests (Vitest)
-npm run build    # production build → dist/
+npm run build    # production build to dist/
 ```
 
 ## Deploy (Vercel)
@@ -70,9 +70,8 @@ npm run build    # production build → dist/
 Zero-config static deploy - Vercel auto-detects Vite. `vercel.json` sets the SPA rewrite.
 Build command `npm run build`, output `dist/`.
 
-> Note: this folder currently sits inside a parent git repo. For a clean Vercel deploy, make it its
-> own repo first (`git init` here → push to a fresh GitHub repo → import to Vercel), or point
-> Vercel's *Root Directory* at this folder.
+Import `github.com/011-sam-110/samson` at vercel.com/new and it builds on every push. No env vars and
+no backend - the whole app runs in the browser.
 
 ## Structure
 
