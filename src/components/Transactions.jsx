@@ -1,11 +1,10 @@
 import { useState } from 'react'
 import { useStore } from '../store/store.js'
 import { gbp, shortDate } from '../lib/format.js'
+import { typeOf, categoryLabel } from '../lib/categories.js'
 import { Sheet } from './ui.jsx'
 import { ExpenseForm, IncomeForm } from './forms.jsx'
 import { IconPlus, IconTrash } from './icons.jsx'
-
-const CAT_LABEL = { fixed: 'Fixed', variable: 'Variable', discretionary: 'Fun' }
 
 function Avatar({ label, cls }) {
   return <div className={`avatar ${cls}`}>{(label || '?').trim().charAt(0).toUpperCase()}</div>
@@ -80,11 +79,11 @@ export default function Transactions() {
         {ledger.length === 0 && <div className="empty">Nothing logged yet. Tap "Expense" to add your first.</div>}
         {ledger.map((t) => (
           <div className="row" key={t.id}>
-            <Avatar label={t.label} cls={t.type === 'income' ? 'cat-income' : `cat-${t.category}`} />
+            <Avatar label={t.label} cls={t.type === 'income' ? 'cat-income' : `cat-${typeOf(t.category)}`} />
             <div className="meta">
               <div className="t">{t.label}</div>
               <div className="s">
-                {shortDate(t.date)} · {t.type === 'income' ? 'Income' : CAT_LABEL[t.category] || 'Spend'}
+                {shortDate(t.date)} · {t.type === 'income' ? 'Income' : categoryLabel(t.category)}
               </div>
             </div>
             <div className={`amt ${t.type === 'income' ? 'pos' : 'neg'}`}>

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useStore } from '../store/store.js'
+import { CATEGORIES } from '../lib/categories.js'
 import { Field, Segmented } from './ui.jsx'
 
 function isoOffset(days) {
@@ -30,7 +31,7 @@ export function ExpenseForm({ onDone }) {
   const { actions } = useStore()
   const [label, setLabel] = useState('')
   const [amount, setAmount] = useState('')
-  const [category, setCategory] = useState('variable')
+  const [category, setCategory] = useState('groceries')
   const [freq, setFreq] = useState('oneoff')
   const [dueDate, setDueDate] = useState(isoOffset(7))
   const ok = label.trim() && Number(amount) > 0
@@ -50,16 +51,19 @@ export function ExpenseForm({ onDone }) {
       <Field label="Amount">
         <AmountInput value={amount} onChange={setAmount} />
       </Field>
-      <Field label="Type">
-        <Segmented
-          value={category}
-          onChange={setCategory}
-          options={[
-            { value: 'fixed', label: 'Fixed' },
-            { value: 'variable', label: 'Variable' },
-            { value: 'discretionary', label: 'Fun' },
-          ]}
-        />
+      <Field label="Category">
+        <div className="chip-grid">
+          {CATEGORIES.map((c) => (
+            <button
+              type="button"
+              key={c.key}
+              className={`btn btn-sm ${category === c.key ? 'btn-primary' : ''}`}
+              onClick={() => setCategory(c.key)}
+            >
+              {c.label}
+            </button>
+          ))}
+        </div>
       </Field>
       <Field label="How often?">
         <Segmented

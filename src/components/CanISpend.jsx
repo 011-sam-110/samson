@@ -24,7 +24,7 @@ export default function CanISpend() {
     : null
 
   const logIt = () => {
-    actions.addExpense({ label: `Spend of ${gbp(spend)}`, amount: spend, category: 'discretionary', freq: 'oneoff' })
+    actions.addExpense({ label: `Spend of ${gbp(spend)}`, amount: spend, category: 'other', freq: 'oneoff' })
     setLogged(true)
     setAmount('')
     setTimeout(() => setLogged(false), 2200)

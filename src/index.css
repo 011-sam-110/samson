@@ -539,6 +539,12 @@ select {
   color: #1f5fb0;
 }
 
+.chip-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 /* ── progress bars (goals) ─────────────────────────────────────────────── */
 .bar {
   height: 8px;
