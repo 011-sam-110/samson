@@ -1,4 +1,6 @@
+import { useRef } from 'react'
 import { useStore } from '../store/store.js'
+import { serializeState, parseBackup, backupFilename, downloadJSON } from '../lib/backup.js'
 import { IconHome, IconLedger, IconGoals, IconSpend, IconEvents } from './icons.jsx'
 
 const ITEMS = [
@@ -21,7 +23,28 @@ export function BrandMark(props) {
 }
 
 export default function Nav({ view, onNavigate }) {
-  const { actions } = useStore()
+  const { state, actions } = useStore()
+  const fileRef = useRef(null)
+
+  const onExport = () => downloadJSON(backupFilename(), serializeState(state))
+
+  const onImportFile = (e) => {
+    const file = e.target.files?.[0]
+    e.target.value = '' // let the same file be picked again later
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      try {
+        const obj = parseBackup(String(reader.result))
+        if (confirm('Import this backup? It replaces everything currently in Leeway.')) {
+          actions.importData(obj)
+        }
+      } catch (err) {
+        alert(err.message)
+      }
+    }
+    reader.readAsText(file)
+  }
 
   const links = (mobile) =>
     ITEMS.map(({ key, label, short, Icon }) => (
@@ -42,6 +65,13 @@ export default function Nav({ view, onNavigate }) {
         </div>
         {links(false)}
         <div className="sidebar-foot">
+          <button className="linkish" onClick={onExport}>
+            Export data
+          </button>
+          <button className="linkish" onClick={() => fileRef.current?.click()}>
+            Import data
+          </button>
+          <input ref={fileRef} type="file" accept="application/json,.json" hidden onChange={onImportFile} />
           <button className="linkish" onClick={() => confirm('Reset back to the demo data?') && actions.resetDemo()}>
             Reset demo data
           </button>
