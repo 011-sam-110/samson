@@ -210,6 +210,56 @@ export function EventForm({ onDone }) {
   )
 }
 
+export function TermSpanForm({ onDone }) {
+  const { actions } = useStore()
+  const [kind, setKind] = useState('freshers')
+  const [label, setLabel] = useState('Freshers')
+  const [start, setStart] = useState(isoOffset(0))
+  const [end, setEnd] = useState(isoOffset(7))
+  const ok = label.trim() && start && end && end >= start
+
+  const submit = (e) => {
+    e.preventDefault()
+    if (!ok) return
+    actions.addTermSpan({ kind, label: label.trim(), start, end })
+    onDone()
+  }
+
+  return (
+    <form onSubmit={submit}>
+      <p style={{ marginTop: 0, color: 'var(--muted)', fontSize: 14 }}>
+        Mark your term so the calendar can warn you ahead of the pricey weeks (Freshers) and nudge you to bank the difference during
+        the quiet ones (exams).
+      </p>
+      <Field label="What is it?">
+        <Segmented
+          value={kind}
+          onChange={setKind}
+          options={[
+            { value: 'freshers', label: 'Freshers' },
+            { value: 'exams', label: 'Exams' },
+            { value: 'term', label: 'Term' },
+          ]}
+        />
+      </Field>
+      <Field label="Name">
+        <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="e.g. Freshers, Semester 1 exams" />
+      </Field>
+      <div className="field-row">
+        <Field label="From">
+          <input type="date" value={start} onChange={(e) => setStart(e.target.value)} />
+        </Field>
+        <Field label="To">
+          <input type="date" value={end} min={start} onChange={(e) => setEnd(e.target.value)} />
+        </Field>
+      </div>
+      <button className="btn btn-primary" style={{ width: '100%' }} disabled={!ok}>
+        Add term dates
+      </button>
+    </form>
+  )
+}
+
 export function SurviveForm({ onDone }) {
   const { state, actions } = useStore()
   const [date, setDate] = useState(state.surviveUntil || isoOffset(90))
