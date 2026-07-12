@@ -77,6 +77,9 @@
   --coral-edge: color-mix(in srgb, var(--coral) 40%, var(--surface));
   --rasp-edge: color-mix(in srgb, var(--rasp) 35%, var(--surface));
   --violet-edge: color-mix(in srgb, var(--violet) 30%, var(--surface));
+  /* Restored for the M5 calendar's Freshers term tint (edge/nudge/dot/chip). The
+     tiles stopped using it, but the calendar now does — off-hue from the violet heat. */
+  --pink-edge: color-mix(in srgb, var(--pink) 50%, var(--surface));
 
   /* The tiles wear the hue louder than anything else does — a --*-soft tint is
      tuned to sit UNDER text in a banner, and at that strength the instrument
@@ -168,6 +171,8 @@
   --coral-edge: color-mix(in srgb, var(--coral) 38%, var(--surface));
   --rasp-edge: color-mix(in srgb, var(--rasp) 42%, var(--surface));
   --violet-edge: color-mix(in srgb, var(--violet) 55%, var(--surface));
+  /* Restored for the M5 calendar's Freshers term tint (see the light block). */
+  --pink-edge: color-mix(in srgb, var(--pink) 34%, var(--surface));
 
   /* Here the constraint flips. On paper a stronger tint moves AWAY from the
      near-black ink; on this ground it moves TOWARDS the near-white ink, so aqua
