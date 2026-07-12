@@ -19,25 +19,26 @@ export default function Transactions() {
   return (
     <div>
       <div className="page-head">
-        <div className="eyebrow">Money</div>
+        <div className="eyebrow">In &amp; out</div>
         <h1>Transactions</h1>
-        <p>Everything in and out. Log a one-off, or set up a recurring bill or income.</p>
+        <p>
+          Everything in and out. Your regular income and bills at the top - these are what Leeway reserves against - then the
+          one-offs you've logged.
+        </p>
       </div>
 
       <div style={{ display: 'flex', gap: 10, marginBottom: 4 }}>
         <button className="btn btn-primary" onClick={() => setSheet('expense')} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-          <IconPlus style={{ width: 18, height: 18 }} /> Expense
+          <IconPlus style={{ width: 18, height: 18 }} /> Add expense
         </button>
         <button className="btn" onClick={() => setSheet('income')} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-          <IconPlus style={{ width: 18, height: 18 }} /> Income
+          <IconPlus style={{ width: 18, height: 18 }} /> Add income
         </button>
       </div>
 
-      <div className="section-title">Recurring</div>
+      <div className="section-title">Money coming in</div>
       <div className="card card-pad">
-        {state.incomeSources.length === 0 && state.bills.length === 0 && (
-          <div className="empty">No recurring money set up yet.</div>
-        )}
+        {state.incomeSources.length === 0 && <div className="empty">No regular income set up yet.</div>}
         {state.incomeSources.map((i) => (
           <div className="row" key={i.id}>
             <Avatar label={i.label} cls="cat-income" />
@@ -56,6 +57,11 @@ export default function Transactions() {
             </button>
           </div>
         ))}
+      </div>
+
+      <div className="section-title">Regular bills</div>
+      <div className="card card-pad">
+        {state.bills.length === 0 && <div className="empty">No recurring bills yet - add rent, your phone, the gym.</div>}
         {state.bills.map((b) => (
           <div className="row" key={b.id}>
             <Avatar label={b.label} cls="cat-fixed" />
@@ -74,9 +80,9 @@ export default function Transactions() {
         ))}
       </div>
 
-      <div className="section-title">Recent activity</div>
+      <div className="section-title">One-off spends</div>
       <div className="card card-pad">
-        {ledger.length === 0 && <div className="empty">Nothing logged yet. Tap "Expense" to add your first.</div>}
+        {ledger.length === 0 && <div className="empty">Nothing logged yet. Tap "Add expense" to add your first.</div>}
         {ledger.map((t) => (
           <div className="row" key={t.id}>
             <Avatar label={t.label} cls={t.type === 'income' ? 'cat-income' : `cat-${typeOf(t.category)}`} />

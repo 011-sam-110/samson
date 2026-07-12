@@ -28,12 +28,13 @@ export function Sheet({ title, onClose, children }) {
   )
 }
 
-// A labelled field wrapper.
-export function Field({ label, children }) {
+// A labelled field wrapper, with an optional hint under the control.
+export function Field({ label, hint, children }) {
   return (
     <div className="field">
       {label && <label>{label}</label>}
       {children}
+      {hint && <p className="field-hint">{hint}</p>}
     </div>
   )
 }

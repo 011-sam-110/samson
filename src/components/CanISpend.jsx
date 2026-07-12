@@ -17,7 +17,7 @@ export default function CanISpend() {
 
   const sub = r
     ? r.verdict === 'yes'
-      ? `You'd still have ${gbp(r.newSafePerDay)}/day until your next paycheck.`
+      ? `You'd still have ${gbp(r.newSafePerDay)}/day until your next payday.`
       : r.verdict === 'tight'
         ? `Doable - but it drops you to ${gbp(r.newSafePerDay)}/day for the next ${r.windowDays} days.`
         : `That's ${gbp(r.over)} more than you've got spare before payday.`

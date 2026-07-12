@@ -16,12 +16,14 @@ export default function Goals() {
   return (
     <div>
       <div className="page-head">
-        <div className="eyebrow">Goals</div>
-        <h1>Saving up</h1>
+        <div className="eyebrow">Saving up</div>
+        <h1>Goals</h1>
         <p>
           {state.goals.length > 0
-            ? `Reserving ${gbp(totalWeekly)}/week across ${state.goals.length} goal${state.goals.length > 1 ? 's' : ''}.`
-            : 'Set a target and Leeway works the weekly saving into your safe-to-spend.'}
+            ? `Held back from your safe-to-spend: ${gbp(totalWeekly)}/week across ${state.goals.length} goal${
+                state.goals.length > 1 ? 's' : ''
+              }.`
+            : 'Set a target and Leeway quietly works the weekly saving into your safe-to-spend.'}
         </p>
       </div>
 
@@ -53,7 +55,7 @@ export default function Goals() {
                 </span>
               </div>
 
-              <div className="bar">
+              <div className={`bar ${p.done ? 'done' : ''}`}>
                 <span style={{ width: `${Math.round(p.pct * 100)}%` }} />
               </div>
 
@@ -71,8 +73,8 @@ export default function Goals() {
                 </span>
                 <span style={{ display: 'flex', gap: 4 }}>
                   {!p.done && (
-                    <button className="btn btn-sm" onClick={() => setContributing(g)}>
-                      Add £
+                    <button className="btn btn-sm btn-tinted" onClick={() => setContributing(g)}>
+                      Add money
                     </button>
                   )}
                   <button className="btn-icon" aria-label={`Remove ${g.label}`} onClick={() => actions.removeGoal(g.id)}>

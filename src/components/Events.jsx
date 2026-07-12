@@ -19,7 +19,7 @@ export default function Events() {
   return (
     <div>
       <div className="page-head">
-        <div className="eyebrow">Ahead</div>
+        <div className="eyebrow">Coming up</div>
         <h1>Planned spends</h1>
         <p>Flag the big nights and trips. Leeway sets the money aside now so they don't blow up your week.</p>
       </div>
@@ -41,7 +41,7 @@ export default function Events() {
         {upcoming.length === 0 && <div className="empty">Nothing planned. Got a birthday or a weekend away coming up?</div>}
         {upcoming.map((e) => (
           <div className="row" key={e.id}>
-            <div className="avatar cat-discretionary">{e.days === 0 ? '★' : e.days}</div>
+            <div className="avatar cat-planned">{e.days === 0 ? '★' : e.days}</div>
             <div className="meta">
               <div className="t">{e.label}</div>
               <div className="s">
