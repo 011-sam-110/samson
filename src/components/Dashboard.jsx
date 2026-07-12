@@ -1,17 +1,18 @@
 import { useState } from 'react'
 import { useStore } from '../store/store.js'
-import { daysBetween } from '../engine/finance.js'
+import { daysBetween, survivalPlan } from '../engine/finance.js'
 import { gbp, gbpWhole, pct, shortDate } from '../lib/format.js'
 import Gauge, { zoneOf } from './Gauge.jsx'
 import { Sheet, useCountUp } from './ui.jsx'
-import { ExpenseForm, ReconcileForm } from './forms.jsx'
+import { ExpenseForm, ReconcileForm, SurviveForm } from './forms.jsx'
 import { IconAlert, IconInfo, IconPlus } from './icons.jsx'
 
 const ZONE_PILL = { go: 'On track', tight: 'Spending fast', over: 'Too fast' }
 
 export default function Dashboard({ onNavigate }) {
   const { state, dash } = useStore()
-  const [sheet, setSheet] = useState(null) // 'expense' | 'reconcile'
+  const [sheet, setSheet] = useState(null) // 'expense' | 'reconcile' | 'survive'
+  const plan = survivalPlan(state, new Date())
 
   const zone = zoneOf(dash.pacePct, dash.overCommitted)
   const overspent = dash.overspent
@@ -112,6 +113,65 @@ export default function Dashboard({ onNavigate }) {
         </button>
       </div>
 
+      {/* ── loan-survival mode ── */}
+      <div className="section-title">Make it last</div>
+      {plan.active ? (
+        <div className="card card-pad">
+          <div className="row" style={{ alignItems: 'center' }}>
+            <div className="meta">
+              <div className="t" style={{ fontWeight: 700 }}>
+                {gbp(plan.pool)} to last {plan.daysLeft} days
+              </div>
+              <div className="s">until {shortDate(plan.surviveUntil)}</div>
+            </div>
+            <button className="btn btn-sm" onClick={() => setSheet('survive')}>
+              Change
+            </button>
+          </div>
+          {plan.status === 'short' ? (
+            <div className="banner warn" style={{ marginBottom: 0 }}>
+              <IconAlert />
+              <div>
+                You're <b>{gbp(plan.shortfall)}</b> short of stretching to {shortDate(plan.surviveUntil)}. Ease a goal, trim a bill,
+                or bring the date in.
+              </div>
+            </div>
+          ) : (
+            <div className="tiles" style={{ marginTop: 12 }}>
+              <div className="tile">
+                <div className="k">Every day</div>
+                <div className="v accent">{gbp(plan.flatDaily)}</div>
+                <div className="h">flat rate</div>
+              </div>
+              <div className="tile">
+                <div className="k">Weekdays</div>
+                <div className="v">{gbp(plan.weekdayRate)}</div>
+                <div className="h">Mon–Fri</div>
+              </div>
+              <div className="tile">
+                <div className="k">Weekends</div>
+                <div className="v">{gbp(plan.weekendRate)}</div>
+                <div className="h">Sat–Sun</div>
+              </div>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="card card-pad">
+          <div className="row" style={{ alignItems: 'center' }}>
+            <div className="meta">
+              <div className="t" style={{ fontWeight: 700 }}>
+                Got a loan or grant to stretch?
+              </div>
+              <div className="s">Pace a lump across the whole term, not just to payday.</div>
+            </div>
+            <button className="btn btn-primary btn-sm" onClick={() => setSheet('survive')}>
+              Set it up
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* ── why this number (trust) ── */}
       <div className="section-title">Why this number</div>
       <div className="card card-pad">
@@ -162,6 +222,11 @@ export default function Dashboard({ onNavigate }) {
       {sheet === 'reconcile' && (
         <Sheet title="Reconcile balance" onClose={() => setSheet(null)}>
           <ReconcileForm onDone={() => setSheet(null)} />
+        </Sheet>
+      )}
+      {sheet === 'survive' && (
+        <Sheet title="Make it last" onClose={() => setSheet(null)}>
+          <SurviveForm onDone={() => setSheet(null)} />
         </Sheet>
       )}
     </div>

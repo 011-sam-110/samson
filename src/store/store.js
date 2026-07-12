@@ -86,6 +86,9 @@ export function StoreProvider({ children }) {
 
       addEvent: ({ label, amount, date }) => push('events', { label, amount: Number(amount) || 0, date }),
 
+      // Loan-survival: the date a lump (loan/grant) must last you until. null clears it.
+      setSurviveUntil: (date) => patch(() => ({ surviveUntil: date || null })),
+
       removeTransaction: (id) => remove('transactions', id),
       removeBill: (id) => remove('bills', id),
       removeIncome: (id) => remove('incomeSources', id),

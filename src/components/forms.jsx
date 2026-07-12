@@ -206,6 +206,47 @@ export function EventForm({ onDone }) {
   )
 }
 
+export function SurviveForm({ onDone }) {
+  const { state, actions } = useStore()
+  const [date, setDate] = useState(state.surviveUntil || isoOffset(90))
+  const ok = !!date
+
+  const submit = (e) => {
+    e.preventDefault()
+    if (!ok) return
+    actions.setSurviveUntil(date)
+    onDone()
+  }
+
+  return (
+    <form onSubmit={submit}>
+      <p style={{ marginTop: 0, color: 'var(--muted)', fontSize: 14 }}>
+        Got a loan or grant that has to see you through the term? Tell Leeway the date it needs to last to, and it'll pace your
+        current balance across every day until then.
+      </p>
+      <Field label="Make it last until">
+        <input type="date" value={date} min={today()} onChange={(e) => setDate(e.target.value)} />
+      </Field>
+      <button className="btn btn-primary" style={{ width: '100%' }} disabled={!ok}>
+        Set the stretch
+      </button>
+      {state.surviveUntil && (
+        <button
+          type="button"
+          className="linkish"
+          style={{ marginTop: 12 }}
+          onClick={() => {
+            actions.setSurviveUntil(null)
+            onDone()
+          }}
+        >
+          Clear it
+        </button>
+      )}
+    </form>
+  )
+}
+
 export function ReconcileForm({ onDone }) {
   const { state, actions } = useStore()
   const [amount, setAmount] = useState(String(state.balance ?? ''))
