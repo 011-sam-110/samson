@@ -6,6 +6,7 @@ import {
   goalProgress,
   computeDashboard,
   canISpend,
+  survivalPlan,
   DAYS_PER_MONTH,
 } from './finance.js'
 
@@ -223,6 +224,60 @@ describe('events reallocate the pool', () => {
     const before = computeDashboard(base, ASOF).safePerDay
     const after = computeDashboard({ ...base, events: [{ id: 'e', label: 'Night out', amount: 60, date: '2026-01-05' }] }, ASOF).safePerDay
     expect(before - after).toBeCloseTo(60 / 12, 1)
+  })
+})
+
+describe('survivalPlan - make a lump last to a date', () => {
+  const base = {
+    balance: 300,
+    surviveUntil: '2026-01-31', // 30 days after ASOF (2026-01-01, a Thursday)
+    incomeSources: [],
+    bills: [],
+    goals: [],
+    events: [],
+    transactions: [],
+  }
+
+  it('is inactive when no survive-until date is set (or it is past)', () => {
+    expect(survivalPlan({ ...base, surviveUntil: null }, ASOF).active).toBe(false)
+    expect(survivalPlan({ ...base, surviveUntil: '2025-12-01' }, ASOF).active).toBe(false)
+  })
+
+  it('spreads the pool flatly across the days left', () => {
+    const p = survivalPlan(base, ASOF)
+    expect(p.active).toBe(true)
+    expect(p.daysLeft).toBe(30)
+    expect(p.pool).toBeCloseTo(300, 4)
+    expect(p.flatDaily).toBeCloseTo(10, 4)
+  })
+
+  it('counts weekday vs weekend days in the window', () => {
+    const p = survivalPlan(base, ASOF)
+    expect(p.weekdayCount).toBe(21)
+    expect(p.weekendCount).toBe(9)
+  })
+
+  it('weekend weighting gives weekends 1.5x a weekday and still sums to the pool', () => {
+    const p = survivalPlan(base, ASOF)
+    expect(p.weekendRate).toBeCloseTo(1.5 * p.weekdayRate, 6)
+    expect(p.weekdayRate * p.weekdayCount + p.weekendRate * p.weekendCount).toBeCloseTo(p.pool, 4)
+  })
+
+  it('reserves bills due within the long window', () => {
+    const p = survivalPlan(
+      { ...base, balance: 400, bills: [{ id: 'rent', amount: 200, freq: 'monthly', nextDue: '2026-01-20' }] },
+      ASOF,
+    )
+    expect(p.pool).toBeCloseTo(200, 4)
+  })
+
+  it('flags a shortfall when commitments outstrip the pool', () => {
+    const p = survivalPlan(
+      { ...base, balance: 100, bills: [{ id: 'rent', amount: 400, freq: 'monthly', nextDue: '2026-01-20' }] },
+      ASOF,
+    )
+    expect(p.status).toBe('short')
+    expect(p.shortfall).toBeGreaterThan(0)
   })
 })
 

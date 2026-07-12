@@ -125,6 +125,39 @@ export function dailyGoalReserve(goal, asOf = new Date()) {
 // ── the dashboard ───────────────────────────────────────────────────────────
 const DEFAULTS = { lookbackDays: 14, comfortFloorPerDay: 5, defaultWindowDays: 14 }
 
+// What's spoken for in a window: one-off income arriving, bills reserved (full for
+// due dates inside the window, else pro-rata - the rent fix), goals and events.
+// Shared by the dashboard (next-payday window) and survivalPlan (a long horizon).
+function windowReserves(state, asOf, windowEnd, windowDays, goalsPerDay) {
+  const incomeSources = state.incomeSources || []
+  const bills = state.bills || []
+  const events = state.events || []
+
+  const incomeInWindow = incomeSources
+    .filter((i) => i.kind === 'oneoff' && i.date)
+    .filter((i) => {
+      const d = toDate(i.date)
+      return d > toDate(asOf) && d <= toDate(windowEnd)
+    })
+    .reduce((s, i) => s + (Number(i.amount) || 0), 0)
+
+  const billsReserve = bills.reduce((s, b) => {
+    const occ = occurrencesInWindow(b.nextDue, b.freq, asOf, windowEnd).length
+    return s + (occ >= 1 ? (Number(b.amount) || 0) * occ : perDayFromBill(b) * windowDays)
+  }, 0)
+
+  const goalsReserve = goalsPerDay * windowDays
+
+  const eventsReserve = events
+    .filter((e) => {
+      const d = toDate(e.date)
+      return d > toDate(asOf) && d <= toDate(windowEnd)
+    })
+    .reduce((s, e) => s + (Number(e.amount) || 0), 0)
+
+  return { incomeInWindow, billsReserve, goalsReserve, eventsReserve }
+}
+
 export function computeDashboard(state, asOf = new Date(), opts = {}) {
   const { lookbackDays, defaultWindowDays } = { ...DEFAULTS, ...opts }
   const incomeSources = state.incomeSources || []
@@ -149,29 +182,13 @@ export function computeDashboard(state, asOf = new Date(), opts = {}) {
   const windowDays = nextIncomeDate ? Math.max(daysBetween(asOf, nextIncomeDate), 1) : defaultWindowDays
   const windowEnd = nextIncomeDate || addDays(asOf, defaultWindowDays)
 
-  // One-off income landing inside the window helps this window's pool.
-  const incomeInWindow = incomeSources
-    .filter((i) => i.kind === 'oneoff' && i.date)
-    .filter((i) => {
-      const d = toDate(i.date)
-      return d > toDate(asOf) && d <= toDate(windowEnd)
-    })
-    .reduce((s, i) => s + (Number(i.amount) || 0), 0)
-
-  // Bills reserve: full amount for each due date inside the window, else pro-rata (the rent fix).
-  const billsReserve = bills.reduce((s, b) => {
-    const occ = occurrencesInWindow(b.nextDue, b.freq, asOf, windowEnd).length
-    return s + (occ >= 1 ? (Number(b.amount) || 0) * occ : perDayFromBill(b) * windowDays)
-  }, 0)
-
-  const goalsReserve = goalsPerDay * windowDays
-
-  const eventsReserve = events
-    .filter((e) => {
-      const d = toDate(e.date)
-      return d > toDate(asOf) && d <= toDate(windowEnd)
-    })
-    .reduce((s, e) => s + (Number(e.amount) || 0), 0)
+  const { incomeInWindow, billsReserve, goalsReserve, eventsReserve } = windowReserves(
+    state,
+    asOf,
+    windowEnd,
+    windowDays,
+    goalsPerDay,
+  )
 
   const pool = (Number(state.balance) || 0) + incomeInWindow - billsReserve - goalsReserve - eventsReserve
   const safePerDay = pool / windowDays
@@ -243,5 +260,55 @@ export function canISpend(state, amount, asOf = new Date(), opts = {}) {
     over: Math.max(spend - dash.pool, 0),
     windowDays: dash.windowDays,
     before: dash,
+  }
+}
+
+// ── loan-survival mode ────────────────────────────────────────────────────────
+// A lump (loan/grant already sitting in the balance) that must last until a far-off
+// date. Same reserve maths as the dashboard, but the window runs now → surviveUntil.
+// Weekend weighting lets the rate breathe: weekends get `weekendFactor`× a weekday,
+// same total, so a livable "£X midweek, £Y at the weekend".
+export function survivalPlan(state, asOf = new Date(), opts = {}) {
+  const { weekendFactor = 1.5 } = opts
+  const surviveUntil = state.surviveUntil ? toDate(state.surviveUntil) : null
+  if (!surviveUntil || surviveUntil <= toDate(asOf)) return { active: false }
+
+  const windowDays = Math.max(daysBetween(asOf, surviveUntil), 1)
+  const goalsPerDay = (state.goals || []).reduce((s, g) => s + dailyGoalReserve(g, asOf), 0)
+  const { incomeInWindow, billsReserve, goalsReserve, eventsReserve } = windowReserves(
+    state,
+    asOf,
+    surviveUntil,
+    windowDays,
+    goalsPerDay,
+  )
+  const pool = (Number(state.balance) || 0) + incomeInWindow - billsReserve - goalsReserve - eventsReserve
+
+  // Count the day-types across the days you'll actually spend over (tomorrow → surviveUntil).
+  let weekdayCount = 0
+  let weekendCount = 0
+  for (let i = 1; i <= windowDays; i++) {
+    const dow = addDays(asOf, i).getDay()
+    if (dow === 0 || dow === 6) weekendCount++
+    else weekdayCount++
+  }
+
+  const flatDaily = pool / windowDays
+  const denom = weekdayCount + weekendFactor * weekendCount
+  const weekdayRate = denom > 0 ? pool / denom : flatDaily
+  const weekendRate = weekendFactor * weekdayRate
+
+  return {
+    active: true,
+    surviveUntil,
+    daysLeft: windowDays,
+    pool,
+    flatDaily,
+    weekdayRate,
+    weekendRate,
+    weekdayCount,
+    weekendCount,
+    status: pool < 0 ? 'short' : 'ok',
+    shortfall: pool < 0 ? -pool : 0,
   }
 }
