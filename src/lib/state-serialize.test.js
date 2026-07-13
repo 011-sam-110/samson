@@ -51,7 +51,11 @@ describe('state-serialize', () => {
       incomeSources: [], bills: [], goals: [], events: [], termSpans: [], transactions: [],
     }
     const state = rowsToState(stateToRows(empty, 'u1'))
+    expect(state.incomeSources).toEqual([])
     expect(state.bills).toEqual([])
+    expect(state.goals).toEqual([])
+    expect(state.events).toEqual([])
+    expect(state.termSpans).toEqual([])
     expect(state.transactions).toEqual([])
   })
 
@@ -61,5 +65,10 @@ describe('state-serialize', () => {
 
   it('validateState rejects a non-array collection', () => {
     expect(() => validateState({ ...sample, bills: {} })).toThrow()
+  })
+
+  it('validateState rejects a termSpans array over the row cap', () => {
+    const tooMany = Array.from({ length: 5001 }, (_, i) => ({ id: `s${i}`, kind: 'term', label: 'x', start: '2026-01-01', end: '2026-01-02' }))
+    expect(() => validateState({ ...sample, termSpans: tooMany })).toThrow()
   })
 })

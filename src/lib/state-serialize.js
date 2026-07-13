@@ -92,6 +92,9 @@ export function validateState(obj) {
     if (!Array.isArray(obj[k])) throw new Error(`Invalid state: ${k} must be an array`)
     if (obj[k].length > MAX_ROWS) throw new Error(`Invalid state: ${k} exceeds ${MAX_ROWS} rows`)
   }
-  if ('termSpans' in obj && !Array.isArray(obj.termSpans)) throw new Error('Invalid state: termSpans must be an array')
+  if ('termSpans' in obj) {
+    if (!Array.isArray(obj.termSpans)) throw new Error('Invalid state: termSpans must be an array')
+    if (obj.termSpans.length > MAX_ROWS) throw new Error(`Invalid state: termSpans exceeds ${MAX_ROWS} rows`)
+  }
   return obj
 }
