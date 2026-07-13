@@ -149,4 +149,13 @@ describe('handleState', () => {
     const res = await handleState({ method: 'DELETE', headers: { authorization: 'Bearer ok' }, body: null }, deps(pool))
     expect(res.status).toBe(405)
   })
+
+  it('GET runs in a REPEATABLE READ snapshot', async () => {
+    const { pool, calls } = fakePool((text) =>
+      text.includes('FROM profiles')
+        ? { rows: [{ user_id: 'u1', balance: '0', last_reconciled: null, survive_until: null, schema_version: 3, updated_at: '2026-01-01T00:00:00Z' }] }
+        : { rows: [] })
+    await handleState({ method: 'GET', headers: { authorization: 'Bearer ok' }, body: null }, deps(pool))
+    expect(calls.map((c) => c.text)).toContain('BEGIN ISOLATION LEVEL REPEATABLE READ')
+  })
 })

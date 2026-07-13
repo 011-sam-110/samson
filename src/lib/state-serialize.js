@@ -5,6 +5,11 @@
 import { CURRENT_VERSION } from '../store/migrate.js'
 
 const MAX_ROWS = 5000
+const MAX_STR = 500
+// Bounded (month 01-12, day 01-31) not just digit-shaped: '2026-13-45' must fail here
+// rather than reach the DB, where a ::date cast on an invalid month/day would 500.
+const YMD = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/
+const okDate = (v) => v == null || (typeof v === 'string' && YMD.test(v))
 
 const num = (v) => {
   const n = typeof v === 'number' ? v : Number(v)
@@ -16,9 +21,11 @@ const num = (v) => {
 const ymd = (v) => {
   if (v == null) return null
   if (v instanceof Date) {
-    const y = v.getUTCFullYear()
-    const m = String(v.getUTCMonth() + 1).padStart(2, '0')
-    const d = String(v.getUTCDate()).padStart(2, '0')
+    // node-postgres parses a DATE column to a JS Date at LOCAL midnight, so read it back
+    // with local getters — correct on Vercel's UTC runtime AND on a non-UTC dev box.
+    const y = v.getFullYear()
+    const m = String(v.getMonth() + 1).padStart(2, '0')
+    const d = String(v.getDate()).padStart(2, '0')
     return `${y}-${m}-${d}`
   }
   return String(v).slice(0, 10)
@@ -83,11 +90,21 @@ export function rowsToState(rows) {
   }
 }
 
+// Per-collection date fields (client shape). Values reach a Postgres ::date cast, so a
+// malformed one must 400 here, not 500 at the DB.
+const DATE_FIELDS = {
+  incomeSources: ['nextDate'], bills: ['nextDue'], goals: ['deadline'],
+  events: ['date'], termSpans: ['start', 'end'], transactions: ['date'],
+}
+
 // Server-side guard for an untrusted PUT body — mirrors src/lib/backup.js:parseBackup
-// (finite balance, required arrays) plus row caps for the network boundary.
+// (finite balance, required arrays) plus row caps, date-format, and string-length checks
+// for the network boundary.
 export function validateState(obj) {
   if (!obj || typeof obj !== 'object' || Array.isArray(obj)) throw new Error('Invalid state: not an object')
   if (typeof obj.balance !== 'number' || !Number.isFinite(obj.balance)) throw new Error('Invalid state: balance')
+  if (!okDate(obj.lastReconciled)) throw new Error('Invalid state: lastReconciled must be YYYY-MM-DD')
+  if (!okDate(obj.surviveUntil)) throw new Error('Invalid state: surviveUntil must be YYYY-MM-DD')
   for (const k of ['incomeSources', 'bills', 'goals', 'events', 'transactions']) {
     if (!Array.isArray(obj[k])) throw new Error(`Invalid state: ${k} must be an array`)
     if (obj[k].length > MAX_ROWS) throw new Error(`Invalid state: ${k} exceeds ${MAX_ROWS} rows`)
@@ -95,6 +112,12 @@ export function validateState(obj) {
   if ('termSpans' in obj) {
     if (!Array.isArray(obj.termSpans)) throw new Error('Invalid state: termSpans must be an array')
     if (obj.termSpans.length > MAX_ROWS) throw new Error(`Invalid state: termSpans exceeds ${MAX_ROWS} rows`)
+  }
+  for (const [k, dateFields] of Object.entries(DATE_FIELDS)) {
+    for (const row of obj[k] || []) {
+      if (typeof row?.label === 'string' && row.label.length > MAX_STR) throw new Error(`Invalid state: ${k} label too long`)
+      for (const f of dateFields) if (!okDate(row[f])) throw new Error(`Invalid state: ${k}.${f} must be YYYY-MM-DD`)
+    }
   }
   return obj
 }

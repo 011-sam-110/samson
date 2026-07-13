@@ -28,9 +28,9 @@ describe('state-serialize', () => {
   })
 
   // pg returns DATE as a JS Date; the app speaks 'YYYY-MM-DD' strings everywhere.
-  it('coerces a Postgres DATE (JS Date) back to a YYYY-MM-DD string', () => {
+  it('coerces a Postgres DATE (JS Date at local midnight) back to a YYYY-MM-DD string', () => {
     const rows = stateToRows(sample, 'u1')
-    rows.transactions[0].date = new Date('2026-07-10T00:00:00Z')
+    rows.transactions[0].date = new Date(2026, 6, 10) // local midnight, as node-postgres parses a DATE
     expect(rowsToState(rows).transactions[0].date).toBe('2026-07-10')
   })
 
@@ -70,5 +70,17 @@ describe('state-serialize', () => {
   it('validateState rejects a termSpans array over the row cap', () => {
     const tooMany = Array.from({ length: 5001 }, (_, i) => ({ id: `s${i}`, kind: 'term', label: 'x', start: '2026-01-01', end: '2026-01-02' }))
     expect(() => validateState({ ...sample, termSpans: tooMany })).toThrow()
+  })
+
+  it('validateState rejects a malformed date field', () => {
+    expect(() => validateState({ ...sample, transactions: [{ ...sample.transactions[0], date: '2026-13-45' }] })).toThrow()
+  })
+
+  it('validateState rejects an over-long label', () => {
+    expect(() => validateState({ ...sample, bills: [{ ...sample.bills[0], label: 'x'.repeat(501) }] })).toThrow()
+  })
+
+  it('validateState accepts a well-formed state (dates + labels ok)', () => {
+    expect(validateState(sample)).toBe(sample)
   })
 })

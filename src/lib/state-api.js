@@ -51,7 +51,8 @@ export async function handleState(req, deps) {
 async function getState(userId, db) {
   const client = await db.connect()
   try {
-    await client.query('BEGIN')
+    // One consistent snapshot for all 7 SELECTs so a concurrent same-user PUT can't tear the hydrate.
+    await client.query('BEGIN ISOLATION LEVEL REPEATABLE READ')
     await client.query("SELECT set_config('app.user_id', $1, true)", [userId])
     const q = (sql) => client.query(sql, [userId])
     const profile = await q('SELECT * FROM profiles WHERE user_id = $1')
