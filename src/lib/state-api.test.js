@@ -62,7 +62,7 @@ describe('handleState', () => {
     expect(res.status).toBe(200)
     expect(res.body.state.balance).toBe(512.4)
     expect(res.body.state.transactions[0].amount).toBe(23.4)
-    expect(res.body.updatedAt).toBe('2026-07-10T00:00:00Z')
+    expect(res.body.updatedAt).toBe('2026-07-10T00:00:00.000Z')
   })
 
   it('PUT replaces state and COMMITs, returning the new updatedAt', async () => {
@@ -76,10 +76,32 @@ describe('handleState', () => {
       deps(pool),
     )
     expect(res.status).toBe(200)
-    expect(res.body.updatedAt).toBe('2026-07-13T00:00:00Z')
+    expect(res.body.updatedAt).toBe('2026-07-13T00:00:00.000Z')
     const texts = calls.map((c) => c.text)
     expect(texts).toContain('COMMIT')
     expect(texts).not.toContain('ROLLBACK')
+  })
+
+  // Regression (review Critical 1 + 2): a returning user whose driver returns a Date for
+  // updated_at, PUTting with a MATCHING baseUpdatedAt and a NON-EMPTY termSpans, must save
+  // (200, not a false 409) and must quote the reserved word `end` in the generated INSERT.
+  it('PUT saves a returning user (Date updated_at, matching base) with a non-empty termSpans', async () => {
+    const stored = new Date('2026-07-13T10:00:00Z')
+    const { pool, calls } = fakePool((text) => {
+      if (text.startsWith('SELECT updated_at FROM profiles')) return { rows: [{ updated_at: stored }] }
+      if (text.startsWith('INSERT INTO profiles')) return { rows: [{ updated_at: new Date('2026-07-13T10:05:00Z') }] }
+      return { rows: [] }
+    })
+    const state = { ...okState(), termSpans: [{ id: 's1', kind: 'term', label: 'Term', start: '2026-01-01', end: '2026-01-02' }] }
+    const res = await handleState(
+      { method: 'PUT', headers: { authorization: 'Bearer ok' }, body: { state, baseUpdatedAt: '2026-07-13T10:00:00.000Z' } },
+      deps(pool),
+    )
+    expect(res.status).toBe(200)                                 // not a false 409 (Critical 1)
+    expect(res.body.updatedAt).toBe('2026-07-13T10:05:00.000Z')  // ISO-normalized
+    const termInsert = calls.find((c) => c.text.startsWith('INSERT INTO') && c.text.includes('term_spans'))
+    expect(termInsert).toBeTruthy()
+    expect(termInsert.text).toContain('"end"')                   // reserved word quoted (Critical 2)
   })
 
   // The recency guard: a write whose baseUpdatedAt no longer matches the stored

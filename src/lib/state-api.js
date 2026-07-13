@@ -23,6 +23,14 @@ function bearer(headers) {
   return h.startsWith('Bearer ') ? h.slice(7) : null
 }
 
+// timestamptz comes back from the driver as a JS Date (live) or a string (tests).
+// Normalize to a canonical ISO string for the client; null on anything unparseable.
+function toIso(v) {
+  if (v == null) return null
+  const d = new Date(v)
+  return Number.isNaN(d.getTime()) ? null : d.toISOString()
+}
+
 export async function handleState(req, deps) {
   const token = bearer(req.headers)
   if (!token) return { status: 401, body: { error: 'Missing token' } }
@@ -63,7 +71,7 @@ async function getState(userId, db) {
       transactions: transactions.rows, bills: bills.rows, income_sources: income_sources.rows,
       goals: goals.rows, events: events.rows, term_spans: term_spans.rows,
     }))
-    return { status: 200, body: { state, updatedAt: profile.rows[0].updated_at } }
+    return { status: 200, body: { state, updatedAt: toIso(profile.rows[0].updated_at) } }
   } catch (e) {
     try { await client.query('ROLLBACK') } catch { /* ignore */ }
     return { status: 500, body: { error: String((e && e.message) || e) } }
@@ -87,10 +95,15 @@ async function putState(userId, body, db) {
     await client.query('BEGIN')
     await client.query("SELECT set_config('app.user_id', $1, true)", [userId])
 
-    const cur = await client.query('SELECT updated_at FROM profiles WHERE user_id = $1', [userId])
-    if (cur.rows.length && baseUpdatedAt !== null && String(cur.rows[0].updated_at) !== baseUpdatedAt) {
+    // FOR UPDATE locks the row so two concurrent PUTs can't both pass the guard and
+    // then lost-update each other at COMMIT.
+    const cur = await client.query('SELECT updated_at FROM profiles WHERE user_id = $1 FOR UPDATE', [userId])
+    // A new account (no row) and a null base are allowed through — intended last-write-wins
+    // first-write semantics; M7's guest->account import must send the base it last read.
+    // Compare as instants: the driver returns a Date, the client echoes back an ISO string.
+    if (cur.rows.length && baseUpdatedAt !== null && new Date(cur.rows[0].updated_at).getTime() !== new Date(baseUpdatedAt).getTime()) {
       await client.query('ROLLBACK')
-      return { status: 409, body: { error: 'stale', currentUpdatedAt: cur.rows[0].updated_at } }
+      return { status: 409, body: { error: 'stale', currentUpdatedAt: toIso(cur.rows[0].updated_at) } }
     }
 
     const upserted = await client.query(
@@ -108,7 +121,7 @@ async function putState(userId, body, db) {
     }
 
     await client.query('COMMIT')
-    return { status: 200, body: { updatedAt: upserted.rows[0].updated_at } }
+    return { status: 200, body: { updatedAt: toIso(upserted.rows[0].updated_at) } }
   } catch (e) {
     try { await client.query('ROLLBACK') } catch { /* ignore */ }
     return { status: 500, body: { error: String((e && e.message) || e) } }
@@ -121,13 +134,16 @@ async function putState(userId, body, db) {
 // parameterized statement regardless of row count (N=0 short-circuits). Table
 // and column names come from the fixed CHILD map, never client input.
 async function replaceCollection(client, table, cols, rows, userId) {
-  await client.query(`DELETE FROM ${table} WHERE user_id = $1`, [userId])
+  // Identifiers (table + columns) come only from the fixed CHILD map, so quoting them is
+  // safe and makes a reserved word like `end` (term_spans) valid; values stay parameterized.
+  await client.query(`DELETE FROM "${table}" WHERE user_id = $1`, [userId])
   if (!rows.length) return
   const allCols = ['user_id', ...cols]
   const arrays = allCols.map((c) => rows.map((r) => (c === 'user_id' ? userId : r[c] ?? null)))
   const casts = allCols.map((c, i) => `$${i + 1}::${castFor(c)}[]`)
+  const colList = allCols.map((c) => `"${c}"`).join(', ')
   await client.query(
-    `INSERT INTO ${table} (${allCols.join(', ')}) SELECT * FROM unnest(${casts.join(', ')})`,
+    `INSERT INTO "${table}" (${colList}) SELECT * FROM unnest(${casts.join(', ')})`,
     arrays,
   )
 }
