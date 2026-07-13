@@ -2,6 +2,9 @@
   "name": "leeway",
   "private": true,
   "version": "0.1.0",
+  "engines": {
+    "node": "22.x"
+  },
   "type": "module",
   "description": "Leeway — a safe-to-spend finance tracker for UK students. Turns messy student finances into one trusted daily number.",
   "scripts": {
@@ -12,6 +15,8 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@clerk/backend": "^3.11.4",
+    "@neondatabase/serverless": "^1.1.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
