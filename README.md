@@ -2,28 +2,29 @@
 
 **One trusted number that tells a UK student what they can safely spend today.**
 
+Live: **https://samson-three.vercel.app**
+
 Existing budgeting apps are rear-view mirrors - they show transactions and charts, then leave you
 to do the mental maths. Leeway is a windscreen: it answers the only question a student actually asks
 at the till - *"can I afford this right now?"* - and keeps that answer honest as life happens (a
 night out, an extra shift, rent looming).
 
-Built from a founding walkthrough + PRD (see `transcript.txt` / `DrunkenGeneratedPRD.md`). A
-client-side React SPA with local persistence and a light/dark theme. The core is fully offline (no
-accounts, your money data stays in the browser); an **optional** serverless AI layer powers
-screenshot import and cut-back tips (those send the image / a spending summary to an LLM provider).
-
 ---
 
 ## The idea in one screen
 
-The home screen is a **spend speedometer** (the founder's own "£/day like mph" metaphor):
+The **Overview** screen leads with your **total balance**, then a **spend speedometer** (the founder's
+own "£/day like mph" metaphor):
 
-- **Safe to spend today £X** - the headline. Of your current cash, Leeway holds back what bills,
-  goals and planned events will need before your next income, then spreads the rest over the days
-  until that income lands.
-- **The gauge** - your *current* daily spend (the marker) measured against your *sustainable* daily
-  rate (the safe line). Green = under, amber = a touch over, red = speeding.
+- **Total balance** - what's actually in your account, first thing you see.
+- **Safe to spend today £X** - of your current cash, Leeway holds back what bills, goals and planned
+  events will need before your next income, then spreads the rest over the days until that income lands.
+- **The gauge** - your *current* daily spend measured against your *sustainable* daily rate.
+  Green = under, amber = a touch over, red = spending fast.
 - **Why this number** - a full breakdown of what's reserved, so the figure is trusted, not magic.
+
+Anything jargon-y carries an **ⓘ button explaining it in plain English**; the heavier analysis lives
+in Insights, so the main screen stays calm for people who just want the number.
 
 ## How the number is calculated
 
@@ -51,64 +52,99 @@ never a scary negative number.
 
 | Screen | Does |
 |---|---|
-| **Today** | The gauge, safe-to-spend, run-rate, next paycheck, and the reserve breakdown |
+| **Overview** | Total balance, the gauge, safe-to-spend, run-rate, next paycheck, and the reserve breakdown |
 | **Transactions** | Recurring income & bills + a ledger of logged one-offs; fast add flow |
+| **Calendar** | Spending calendar with term/Freshers/exam overlays and a plan-ahead nudge |
+| **Insights** | A report on your money: spend-over-time and weekly-trend charts, category ranking, weekend effect, leaks, "Ways to save", the lump-sum planner, and an AI cut-back tip |
 | **Goals** | Targets with auto weekly-required set-aside and progress |
-| **Insights** | Analytics: spend-by-category, week-vs-usual trend, weekend effect, leaks, cost-to-goal, and an AI cut-back tip |
 | **Can I spend?** | Type an amount and get an instant yes / tight / no verdict with the impact |
-| **Planned** | Flag upcoming spends (nights out, trips) so they're reserved ahead of time |
-| **Make it last** | (on Today) Stretch a loan/grant across a whole term - a safe £/day with a weekday/weekend split |
 
 Transactions also has **Import from a screenshot**: upload a bank statement image and the AI extracts
 the rows for you to review and import.
+
+## Accounts
+
+Leeway has its **own** credential auth - no third-party identity provider.
+
+- **Passwords** are hashed with **scrypt** (memory-hard) using a **random per-password salt**, and
+  verified in constant time. The stored value is self-describing (`scrypt$N$r$p$salt$hash`) so the
+  work factor can be raised later without invalidating existing users.
+- **Sessions** are HS256-signed tokens delivered in an **HttpOnly, Secure, SameSite=Lax** cookie, so
+  the browser never exposes them to JavaScript. Signed with `SESSION_SECRET`.
+- Built only on Node's built-in `crypto` - no native modules, so it deploys clean on serverless.
+- **No email/password reset yet** (deliberate for now - there is no mail provider wired up).
+- **Guest mode**: you can use the whole app without an account (localStorage only). Signing up
+  afterwards pushes what you built into your new account.
+
+Your data syncs to Postgres per user, guarded by the verified session and Row-Level Security. A
+recency check (`baseUpdatedAt`) stops a stale tab from clobbering a newer save.
 
 ## Run it
 
 ```bash
 npm install
-npm run dev      # http://localhost:5173
-npm test         # engine unit tests (Vitest)
+npm run dev      # http://localhost:5173 (also serves /api from api/ via a Vite middleware)
+npm test         # 187 unit tests (Vitest)
 npm run build    # production build to dist/
 ```
+
+`npm run dev` reads `.env.local`. With no `DATABASE_URL` the app still runs fine in guest mode.
 
 ## Deploy (Vercel)
 
 Vercel auto-detects Vite: build `npm run build`, output `dist/`. `vercel.json` keeps the SPA rewrite
-but excludes `/api` so the serverless functions stay reachable.
+but excludes `/api` so the serverless functions stay reachable. `main` auto-deploys to production.
 
 ### Environment variables
 
-The AI endpoints (`/api/extract`, `/api/tips`) need at least one LLM key, set in the Vercel dashboard
-(**Settings → Environment Variables**). `.env.local` only works locally. The rest of the app runs
-fine with no keys - you just don't get AI import/tips.
-
-| Var | Powers | Get one (free) |
+| Var | Required | Powers |
 |---|---|---|
-| `GROQ_API_KEY` | screenshot import (vision) + tips | console.groq.com (no card) |
-| `GEMINI_API_KEY` | optional fallback | aistudio.google.com |
-| `OPENROUTER_API_KEY` | optional fallback | openrouter.ai |
+| `DATABASE_URL` | for accounts | Postgres (Neon) connection string |
+| `SESSION_SECRET` | for accounts | Signs session cookies. Rotating it signs everyone out |
+| `GROQ_API_KEY` | optional | Screenshot import (vision) + AI tips |
+| `GEMINI_API_KEY` / `OPENROUTER_API_KEY` | optional | Fallbacks; the backend fails over on rate limits |
 
-The backend builds a pool from whichever keys are present (in that order) and fails over on rate
-limits. See `.env.example`.
+See `.env.example`. Everything is read server-side only - never prefix with `VITE_`.
 
-### Collaboration note (Hobby tier)
+### First-time database setup
 
-Vercel Hobby only deploys commits **authored by the account owner**. If a teammate's commit is the
-tip of `main`, the deploy is blocked (*"commit author does not have contributing access"*). Keep it
-free by having the owner **merge the PRs** (the merge commit is then the owner's), or upgrade to Pro /
-move to Cloudflare Pages for true multi-author deploys.
+Apply the schema once against your database, then verify:
+
+```bash
+node scripts/apply-schema.mjs      # applies schema.sql, checks tables + RLS (idempotent)
+```
+
+## Tests
+
+```bash
+npm test                           # 187 unit tests, no DB or network needed
+node scripts/db-integration.mjs    # end-to-end against a real Postgres (see script header)
+```
+
+The integration harness drives the *same* handlers the serverless functions use - signup, login,
+save/load, the stale-write conflict guard, usage tracking and cross-user isolation - against a real
+database, so the SQL is exercised rather than mocked.
 
 ## Structure
 
 ```
+api/                        # Vercel serverless functions (thin wrappers)
+  auth/{signup,login,logout,me}.js
+  state.js  usage.js  extract.js  tips.js
 src/
-  engine/finance.js        # pure safe-to-spend engine (+ finance.test.js, 23 tests)
+  engine/finance.js         # pure safe-to-spend engine (+ analytics, calendar, recurring)
+  lib/auth.js               # scrypt hashing, session tokens, cookies (pure, unit-tested)
+  lib/auth-handlers.js      # signup/login/me/usage logic, DB injected
+  lib/state-api.js          # cloud state GET/PUT, DB + auth injected
   store/{store,seed}.js     # localStorage-backed state + demo data
-  lib/{format,id}.js        # £ / date formatting
-  components/               # Dashboard, Transactions, Goals, CanISpend, Events, Gauge, Nav, forms
+  components/               # Overview, Transactions, Calendar, Insights, Goals, AuthScreen, …
+schema.sql                  # users, per-user state tables, usage_events, RLS
 ```
 
-## Deferred (the growth surface, not the proof of value)
+The pure-logic / thin-wrapper split is deliberate: every handler is unit-tested with no DB or
+network, and the `api/*` files just adapt the request shape.
 
-Open-banking sync · analytics charts page · pre-loaded term/Freshers calendar · exam "quiet mode" ·
+## Deferred
+
+Open-banking sync · password reset via email · pre-loaded term/Freshers calendar · exam "quiet mode" ·
 AI advice engine · investing layer. See the PRD for the full roadmap.
