@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { useStore } from '../store/store.js'
-import { daysBetween, survivalPlan } from '../engine/finance.js'
-import { gbp, gbpWhole, pct, shortDate, fullDate } from '../lib/format.js'
+import { daysBetween } from '../engine/finance.js'
+import { gbp, gbpWhole, shortDate, fullDate } from '../lib/format.js'
 import Gauge, { zoneOf } from './Gauge.jsx'
-import { Sheet, useCountUp } from './ui.jsx'
-import { ExpenseForm, ReconcileForm, SurviveForm } from './forms.jsx'
+import { Sheet, Explain, useCountUp } from './ui.jsx'
+import { ExpenseForm, ReconcileForm } from './forms.jsx'
 import CanISpend from './CanISpend.jsx'
 import { IconAlert, IconInfo, IconPlus, IconWallet } from './icons.jsx'
 
@@ -12,8 +12,7 @@ const ZONE_PILL = { go: 'On track', tight: 'Spending fast', over: 'Too fast' }
 
 export default function Dashboard() {
   const { state, dash } = useStore()
-  const [sheet, setSheet] = useState(null) // 'expense' | 'reconcile' | 'survive' | 'canispend'
-  const plan = survivalPlan(state, new Date())
+  const [sheet, setSheet] = useState(null) // 'expense' | 'reconcile' | 'canispend'
 
   const zone = zoneOf(dash.pacePct, dash.overCommitted)
   const overspent = dash.overspent
@@ -24,10 +23,13 @@ export default function Dashboard() {
 
   return (
     <div>
-      <div className="page-head" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+      <div
+        className="page-head"
+        style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}
+      >
         <div>
           <div className="eyebrow">{fullDate(new Date())}</div>
-          <h1>Today</h1>
+          <h1>Overview</h1>
         </div>
         <button
           className="btn btn-sm btn-tinted"
@@ -38,10 +40,28 @@ export default function Dashboard() {
         </button>
       </div>
 
-      {/* ── the instrument panel ── */}
+      {/* ── the very first thing: your total balance ── */}
+      <div className="balance-card">
+        <div className="balance-top">
+          <IconWallet />
+          <span>Total balance</span>
+        </div>
+        <div className="balance-num">{gbp(state.balance)}</div>
+        <div className="balance-sub">
+          What's in your account · last checked {checkedAgo <= 0 ? 'today' : `${checkedAgo} day${checkedAgo === 1 ? '' : 's'} ago`}
+        </div>
+      </div>
+
+      {/* ── then the signature: what can I safely spend today? ── */}
       <div className="panel">
         <div className="panel-top">
-          <span className="label">Spending pace</span>
+          <span className="label" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            Spending rate
+            <Explain label="spending rate">
+              The needle shows how fast you're spending compared with a pace you can keep up. In the{' '}
+              <b>green</b> you're fine, <b>amber</b> means ease off, <b>red</b> means you're spending too fast to last until payday.
+            </Explain>
+          </span>
           <span className={`pill ${zone}`}>{zonePill}</span>
         </div>
 
@@ -57,22 +77,11 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
-
-        <div className="pace-line">
-          <span>
-            Now <b>{gbp(dash.currentDaily)}</b>/day
-          </span>
-          <span>
-            Safe rate <b>{gbp(Math.max(dash.targetDaily, 0))}</b>/day
-          </span>
-          {dash.overCommitted ? <span>commitments over income</span> : <span>at <b>{pct(dash.pacePct)}</b> of pace</span>}
-        </div>
       </div>
 
       {/* ── the two things you actually came to do ──
-          Directly under the number they move: log what you just spent, or ask
-          before you spend it. On mobile they stop being buttons and become the
-          two brand-coloured slabs you can hit with a thumb without looking. */}
+          On mobile they become the two brand-coloured slabs you can hit with a
+          thumb without looking. */}
       <div className="today-actions">
         <button className="act act-violet" onClick={() => setSheet('expense')}>
           <IconPlus />
@@ -90,7 +99,7 @@ export default function Dashboard() {
           <IconAlert />
           <div>
             You're <b>{gbp(dash.overAmount)}</b> short before your next payday. Trim to <b>{gbp(dash.recoveryPerDay)}/day</b> to
-            claw it back - or push a goal deadline out.
+            claw it back — or push a goal deadline out.
           </div>
         </div>
       )}
@@ -98,113 +107,72 @@ export default function Dashboard() {
         <div className="banner warn">
           <IconAlert />
           <div>
-            Your bills and goals cost more than you earn (<b>{gbp(-dash.targetDaily)}/day</b> short). Something has to give - ease a
+            Your bills and goals cost more than you earn (<b>{gbp(-dash.targetDaily)}/day</b> short). Something has to give — ease a
             goal or cut a recurring cost.
           </div>
         </div>
       )}
 
-      {/* ── instrument tiles ── */}
+      {/* ── three quick numbers, each explained in plain English ── */}
       <div className="tiles">
-        <div className="tile t-violet">
-          <div className="k">Spending now</div>
+        <div className="tile">
+          <div className="k">
+            Spending rate
+            <Explain label="spending rate">
+              How fast you're spending right now — your everyday spending (not rent or bills) averaged over the last two weeks.
+            </Explain>
+          </div>
           <div className="v">{gbp(dash.currentDaily)}</div>
-          <div className="h">per day, averaged over 14 days</div>
+          <div className="h">a day, on average</div>
         </div>
         <div className="tile t-aqua">
-          <div className="k">Safe rate</div>
+          <div className="k">
+            Safe daily rate
+            <Explain label="safe daily rate">
+              The most you can spend each day and still cover your bills and savings. Stay under it and you'll never come up short
+              before payday.
+            </Explain>
+          </div>
           <div className="v accent">{gbp(Math.max(dash.targetDaily, 0))}</div>
-          <div className="h">per day, and you never slip</div>
+          <div className="h">a day, and you never slip</div>
         </div>
-        <div className="tile t-pink">
+        <div className="tile">
           <div className="k">Next payday</div>
-          <div className="v">{dash.nextIncomeDate ? `${dash.daysToPay}d` : '-'}</div>
+          <div className="v">{dash.nextIncomeDate ? `${dash.daysToPay}d` : '—'}</div>
           <div className="h">{dash.nextIncomeDate ? shortDate(dash.nextIncomeDate) : 'no income set up yet'}</div>
         </div>
       </div>
 
-      {/* ── loan-survival mode ── */}
-      <div className="section-title">Make it last</div>
-      {plan.active ? (
-        <div className="card card-pad">
-          <div className="row" style={{ alignItems: 'center' }}>
-            <div className="meta">
-              <div className="t" style={{ fontWeight: 700 }}>
-                {gbp(plan.pool)} to last {plan.daysLeft} days
-              </div>
-              <div className="s">until {shortDate(plan.surviveUntil)}</div>
-            </div>
-            <button className="btn btn-sm" onClick={() => setSheet('survive')}>
-              Change
-            </button>
-          </div>
-          {plan.status === 'short' ? (
-            <div className="banner warn" style={{ marginBottom: 0 }}>
-              <IconAlert />
-              <div>
-                You're <b>{gbp(plan.shortfall)}</b> short of stretching to {shortDate(plan.surviveUntil)}. Ease a goal, trim a bill,
-                or bring the date in.
-              </div>
-            </div>
-          ) : (
-            <div className="tiles" style={{ marginTop: 12 }}>
-              <div className="tile">
-                <div className="k">Every day</div>
-                <div className="v accent">{gbp(plan.flatDaily)}</div>
-                <div className="h">flat rate</div>
-              </div>
-              <div className="tile">
-                <div className="k">Weekdays</div>
-                <div className="v">{gbp(plan.weekdayRate)}</div>
-                <div className="h">Mon–Fri</div>
-              </div>
-              <div className="tile">
-                <div className="k">Weekends</div>
-                <div className="v">{gbp(plan.weekendRate)}</div>
-                <div className="h">Sat–Sun</div>
-              </div>
-            </div>
-          )}
+      {/* ── why this number (trust, in plain words) ── */}
+      <div className="section-head">
+        <div className="section-title" style={{ margin: 0 }}>
+          Why you can spend {gbpWhole(Math.max(dash.safePerDay, 0))} a day
         </div>
-      ) : (
-        <div className="card card-pad">
-          <div className="row" style={{ alignItems: 'center' }}>
-            <div className="meta">
-              <div className="t" style={{ fontWeight: 700 }}>
-                Got a loan or grant to stretch?
-              </div>
-              <div className="s">Pace a lump across the whole term, not just to payday.</div>
-            </div>
-            <button className="btn btn-primary btn-sm" onClick={() => setSheet('survive')}>
-              Set it up
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* ── why this number (trust) ── */}
-      <div className="section-title">Why this number</div>
+        <Explain label="why this number">
+          We start from your balance, set aside what's already promised (bills, savings, planned nights out), then share what's
+          left evenly across the days until payday.
+        </Explain>
+      </div>
       <div className="card card-pad">
         <div className="banner info" style={{ marginTop: 0, marginBottom: 8 }}>
           <IconInfo />
           <div>
-            Of your <b>{gbp(state.balance)}</b> balance (checked {checkedAgo <= 0 ? 'today' : `${checkedAgo}d ago`}), here's what's
-            spoken for before payday in {dash.daysToPay} days:
+            Of your <b>{gbp(state.balance)}</b> balance, here's what's already spoken for before payday in {dash.daysToPay} days:
           </div>
         </div>
         <div className="row">
           <div className="meta">
             <div className="t">Bills due before payday</div>
-            <div className="s">rent reserved pro-rata even if it lands after payday</div>
+            <div className="s">we set rent aside even if it's due just after payday</div>
           </div>
-          <div className="amt neg">-{gbp(dash.billsReserve)}</div>
+          <div className="amt neg">−{gbp(dash.billsReserve)}</div>
         </div>
         <div className="row">
           <div className="meta">
-            <div className="t">Goal set-aside</div>
+            <div className="t">Money for your goals</div>
             <div className="s">keeps your savings on schedule</div>
           </div>
-          <div className="amt neg">-{gbp(dash.goalsReserve)}</div>
+          <div className="amt neg">−{gbp(dash.goalsReserve)}</div>
         </div>
         {dash.eventsReserve > 0 && (
           <div className="row">
@@ -212,15 +180,19 @@ export default function Dashboard() {
               <div className="t">Planned spends</div>
               <div className="s">the nights out and trips you've already flagged</div>
             </div>
-            <div className="amt neg">-{gbp(dash.eventsReserve)}</div>
+            <div className="amt neg">−{gbp(dash.eventsReserve)}</div>
           </div>
         )}
         <div className="row">
           <div className="meta">
-            <div className="t" style={{ fontWeight: 700 }}>Free to spend over {dash.daysToPay} days</div>
-            <div className="s">that's your {gbp(dash.safePerDay)}/day</div>
+            <div className="t" style={{ fontWeight: 700 }}>
+              Free to spend over {dash.daysToPay} days
+            </div>
+            <div className="s">that's your {gbp(dash.safePerDay)} a day</div>
           </div>
-          <div className="amt" style={{ color: 'var(--brand-ink)' }}>{gbp(Math.max(dash.pool, 0))}</div>
+          <div className="amt" style={{ color: 'var(--brand-ink)' }}>
+            {gbp(Math.max(dash.pool, 0))}
+          </div>
         </div>
       </div>
 
@@ -232,11 +204,6 @@ export default function Dashboard() {
       {sheet === 'reconcile' && (
         <Sheet title="Reconcile balance" onClose={() => setSheet(null)}>
           <ReconcileForm onDone={() => setSheet(null)} />
-        </Sheet>
-      )}
-      {sheet === 'survive' && (
-        <Sheet title="Make it last" onClose={() => setSheet(null)}>
-          <SurviveForm onDone={() => setSheet(null)} />
         </Sheet>
       )}
       {sheet === 'canispend' && (

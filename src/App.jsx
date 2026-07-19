@@ -1,12 +1,16 @@
-import { useState } from 'react'
+import { Suspense, lazy, useState } from 'react'
 import { StoreProvider } from './store/store.js'
 import { useTheme } from './lib/theme.js'
 import Nav from './components/Nav.jsx'
 import AccountMenu from './components/AccountMenu.jsx'
 import Dashboard from './components/Dashboard.jsx'
 import Transactions from './components/Transactions.jsx'
-import Insights from './components/Insights.jsx'
+import CalendarPage from './components/CalendarPage.jsx'
 import Goals from './components/Goals.jsx'
+
+// Insights pulls in the charting library — code-split it so it only loads when
+// someone actually opens the tab, keeping the first paint (Overview) light.
+const Insights = lazy(() => import('./components/Insights.jsx'))
 
 function Shell() {
   const [view, setView] = useState('home')
@@ -24,7 +28,12 @@ function Shell() {
 
         {view === 'home' && <Dashboard />}
         {view === 'money' && <Transactions />}
-        {view === 'insights' && <Insights />}
+        {view === 'calendar' && <CalendarPage />}
+        {view === 'insights' && (
+          <Suspense fallback={<div className="empty">Loading your report…</div>}>
+            <Insights />
+          </Suspense>
+        )}
         {view === 'goals' && <Goals />}
       </main>
     </div>
