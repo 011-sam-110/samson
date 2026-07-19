@@ -1,17 +1,18 @@
 import { useEffect, useRef, useState } from 'react'
 import { useStore } from '../store/store.js'
+import { useAuth } from '../lib/auth-context.jsx'
 import { serializeState, parseBackup, backupFilename, downloadJSON } from '../lib/backup.js'
 import { Sheet, Segmented } from './ui.jsx'
 import { IconUser, IconSettings, IconDownload, IconUpload, IconRefresh, IconTrash } from './icons.jsx'
 
-// The account button every finance app has in the top right. Leeway has no
-// sign-in - your money never leaves this device - so there is no profile to show
-// and nothing to log out of. What it collects instead is everything that acts on
-// your data *as a whole*: take it with you, bring it back, wipe it. Those used to
-// hide in the sidebar footer, where the mobile build couldn't reach them at all.
+// The account button every finance app has in the top right. It shows who you're
+// signed in as (or that you're a guest on this device only), and collects
+// everything that acts on your data *as a whole*: take it with you, bring it
+// back, wipe it, sign out.
 
 export default function AccountMenu({ theme, setTheme }) {
   const { state, actions } = useStore()
+  const { user, guest, logout, exitGuest } = useAuth()
   const [open, setOpen] = useState(false)
   const [settings, setSettings] = useState(false)
   const wrapRef = useRef(null)
@@ -92,9 +93,21 @@ export default function AccountMenu({ theme, setTheme }) {
       {open && (
         <div className="menu" role="menu">
           <div className="menu-head">
-            <div className="menu-title">Your Leeway</div>
-            <div className="menu-sub">Saved on this device only</div>
+            <div className="menu-title">{user ? user.username || user.email : 'Your Leeway'}</div>
+            <div className="menu-sub">
+              {user ? 'Saved to your account, on any device' : 'Guest — saved on this device only'}
+            </div>
           </div>
+
+          {guest && !user && (
+            <button className="menu-item" role="menuitem" onClick={exitGuest}>
+              <IconUser />
+              <span>
+                Save to an account
+                <em>Keep your data and use Leeway anywhere</em>
+              </span>
+            </button>
+          )}
 
           <button className="menu-item" role="menuitem" onClick={onExport}>
             <IconDownload />
@@ -137,6 +150,16 @@ export default function AccountMenu({ theme, setTheme }) {
               <em>Appearance, and clearing your data</em>
             </span>
           </button>
+
+          {user && (
+            <button className="menu-item" role="menuitem" onClick={() => { setOpen(false); logout() }}>
+              <IconUser />
+              <span>
+                Log out
+                <em>Your data stays safe in your account</em>
+              </span>
+            </button>
+          )}
         </div>
       )}
 

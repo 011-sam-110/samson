@@ -126,7 +126,7 @@ export function termNudge(state, asOf = new Date()) {
   }
   if (termEnding) {
     const toEnd = daysBetween(today, toDate(termEnding.end))
-    const tail = surviveUntil ? ' Check "Make it last" on Today to pace what\'s left.' : ''
+    const tail = surviveUntil ? ' Check "Make a lump last" in Insights to spread what\'s left.' : ''
     return {
       kind: 'term',
       label: termEnding.label,
@@ -152,7 +152,7 @@ function messageFor(span, phase, daysUntil) {
   }
   // exams
   return phase === 'active'
-    ? 'Exams are on — a quiet, cheap stretch. Spend under your usual pace and bank the difference.'
+    ? 'Exams are on — a quiet, cheap stretch. Spend under your usual rate and bank the difference.'
     : `Exams start ${whenPhrase(daysUntil)} — a quiet, cheap stretch ahead. Plan to bank the difference.`
 }
 

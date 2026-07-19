@@ -16,6 +16,14 @@ function inRange(dateStr, from, to) {
   return d >= toDate(from) && d <= toDate(to)
 }
 
+function isoOf(d) {
+  const x = toDate(d)
+  const y = x.getFullYear()
+  const m = String(x.getMonth() + 1).padStart(2, '0')
+  const da = String(x.getDate()).padStart(2, '0')
+  return `${y}-${m}-${da}`
+}
+
 // ── period windows ─────────────────────────────────────────────────────────
 export function periodRange(key, asOf = new Date()) {
   const a = toDate(asOf)
@@ -90,6 +98,39 @@ export function weekendSplit(transactions, from, to, asOf = new Date()) {
     weekdayPerDay: weekdayCount > 0 ? weekdayTotal / weekdayCount : 0,
     weekendPerDay: weekendCount > 0 ? weekendTotal / weekendCount : 0,
   }
+}
+
+// ── time series (for the Insights charts) ───────────────────────────────────
+// Per-day expense total across [from, to] inclusive. Every day is present (0 when
+// nothing was spent) so a line/area chart draws a continuous, honest baseline.
+export function dailySpendSeries(transactions, from, to) {
+  const start = toDate(from)
+  const span = daysBetween(from, to) // inclusive day count = span + 1; < 0 → empty
+  const totals = new Map()
+  for (const t of (transactions || []).filter(isExpense)) {
+    if (!inRange(t.date, from, to)) continue
+    const k = isoOf(t.date)
+    totals.set(k, (totals.get(k) || 0) + amt(t))
+  }
+  const out = []
+  for (let i = 0; i <= span; i++) {
+    const k = isoOf(addDays(start, i))
+    out.push({ date: k, total: totals.get(k) || 0 })
+  }
+  return out
+}
+
+// Trailing weekly non-fixed spend, oldest → newest. The last bucket ends on asOf
+// and covers the seven days up to and including it; matches weeklyTrend's window.
+export function weeklySeries(transactions, asOf = new Date(), weeks = 6) {
+  const a = toDate(asOf)
+  const out = []
+  for (let i = weeks - 1; i >= 0; i--) {
+    const end = addDays(a, -7 * i)
+    const start = addDays(end, -6)
+    out.push({ start: isoOf(start), end: isoOf(end), total: nonFixedBetween(transactions, start, end) })
+  }
+  return out
 }
 
 // ── trend & movers (non-fixed spend, rolling weeks off asOf) ────────────────
