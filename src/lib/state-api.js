@@ -18,11 +18,6 @@ const CHILD = {
   term_spans: ['id', 'kind', 'label', 'start', 'end'],
 }
 
-function bearer(headers) {
-  const h = (headers && (headers.authorization || headers.Authorization)) || ''
-  return h.startsWith('Bearer ') ? h.slice(7) : null
-}
-
 // timestamptz comes back from the driver as a JS Date (live) or a string (tests).
 // Normalize to a canonical ISO string for the client; null on anything unparseable.
 function toIso(v) {
@@ -32,16 +27,16 @@ function toIso(v) {
 }
 
 export async function handleState(req, deps) {
-  const token = bearer(req.headers)
-  if (!token) return { status: 401, body: { error: 'Missing token' } }
-  let userId
+  // Auth is a single injected seam: deps.authenticate(req) -> userId | null.
+  // In production that verifies the session cookie (src/lib/auth.js); in tests
+  // it's a stub. user_id ALWAYS comes from here, never from the request body.
+  let userId = null
   try {
-    const claims = await deps.verifyToken(token, { secretKey: deps.secretKey, authorizedParties: deps.authorizedParties })
-    userId = claims && claims.sub
+    userId = await deps.authenticate(req)
   } catch {
-    return { status: 401, body: { error: 'Invalid token' } }
+    userId = null
   }
-  if (!userId) return { status: 401, body: { error: 'Invalid token' } }
+  if (!userId) return { status: 401, body: { error: 'Not signed in' } }
 
   if (req.method === 'GET') return getState(userId, deps.db)
   if (req.method === 'PUT') return putState(userId, req.body, deps.db)

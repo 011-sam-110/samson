@@ -4,7 +4,7 @@ import react from '@vitejs/plugin-react'
 // Serve the /api serverless functions during `npm run dev` without the Vercel CLI.
 // Adapts Node req/res to the Vercel handler shape and loads keys from .env.local.
 function devApi(env) {
-  const KEYS = ['GROQ_API_KEY', 'GEMINI_API_KEY', 'OPENROUTER_API_KEY', 'DATABASE_URL', 'CLERK_SECRET_KEY', 'APP_ORIGINS']
+  const KEYS = ['GROQ_API_KEY', 'GEMINI_API_KEY', 'OPENROUTER_API_KEY', 'DATABASE_URL', 'SESSION_SECRET']
   for (const k of KEYS) if (env[k]) process.env[k] = env[k]
   return {
     name: 'leeway-dev-api',

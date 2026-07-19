@@ -22,21 +22,21 @@ const okState = () => ({
   incomeSources: [], bills: [], goals: [], events: [], termSpans: [], transactions: [],
 })
 const deps = (pool, over = {}) => ({
-  db: pool, verifyToken: async () => ({ sub: 'u1' }), secretKey: 'sk', authorizedParties: [], ...over,
+  db: pool, authenticate: async () => 'u1', ...over,
 })
 
 describe('handleState', () => {
-  it('rejects a request with no bearer token (401)', async () => {
+  it('rejects a request with no session (401)', async () => {
     const { pool } = fakePool(() => ({ rows: [] }))
-    const res = await handleState({ method: 'GET', headers: {}, body: null }, deps(pool))
+    const res = await handleState({ method: 'GET', headers: {}, body: null }, deps(pool, { authenticate: async () => null }))
     expect(res.status).toBe(401)
   })
 
-  it('rejects an invalid token (401)', async () => {
+  it('rejects an invalid session (401)', async () => {
     const { pool } = fakePool(() => ({ rows: [] }))
     const res = await handleState(
-      { method: 'GET', headers: { authorization: 'Bearer bad' }, body: null },
-      deps(pool, { verifyToken: async () => { throw new Error('bad token') } }),
+      { method: 'GET', headers: { cookie: 'session=bad' }, body: null },
+      deps(pool, { authenticate: async () => { throw new Error('bad token') } }),
     )
     expect(res.status).toBe(401)
   })
@@ -137,7 +137,7 @@ describe('handleState', () => {
     })
     await handleState(
       { method: 'PUT', headers: { authorization: 'Bearer ok' }, body: { state: okState(), baseUpdatedAt: null, user_id: 'attacker' } },
-      deps(pool, { verifyToken: async () => ({ sub: 'real-user' }) }),
+      deps(pool, { authenticate: async () => 'real-user' }),
     )
     const paramsUsed = calls.flatMap((c) => c.params || [])
     expect(paramsUsed).toContain('real-user')

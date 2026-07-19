@@ -1,24 +1,20 @@
 // api/state.js
 // Serverless: cloud state GET/PUT. Thin wrapper — all logic + tests live in
-// src/lib/state-api.js (injectable), the same split as api/extract.js -> src/lib/llm.js.
-import { Pool } from '@neondatabase/serverless'
-import { verifyToken } from '@clerk/backend'
+// src/lib/state-api.js (injectable). Auth is our own session cookie (src/lib/auth.js),
+// verified via userIdFromRequest; user_id is taken from the token, never the body.
 import { handleState } from '../src/lib/state-api.js'
+import { userIdFromRequest } from '../src/lib/auth.js'
+import { makePool, sessionSecret } from '../src/lib/server.js'
 
 export default async function handler(req, res) {
-  const pool = new Pool({ connectionString: process.env.DATABASE_URL })
+  const db = makePool()
   try {
     const { status, body } = await handleState(
       { method: req.method, headers: req.headers, body: req.body },
-      {
-        db: pool,
-        verifyToken,
-        secretKey: process.env.CLERK_SECRET_KEY,
-        authorizedParties: (process.env.APP_ORIGINS || '').split(',').map((s) => s.trim()).filter(Boolean),
-      },
+      { db, authenticate: (r) => userIdFromRequest(r, sessionSecret()) },
     )
     return res.status(status).json(body)
   } finally {
-    await pool.end()
+    await db.end()
   }
 }
