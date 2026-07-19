@@ -45,8 +45,11 @@ export function AuthProvider({ children }) {
   }, [])
 
   const continueAsGuest = useCallback(() => setGuest(true), [])
+  // Leaving guest mode drops you back at the sign-in screen; whatever the guest
+  // built locally is pushed up to the new account on first sync (see CloudSync).
+  const exitGuest = useCallback(() => setGuest(false), [])
 
-  const value = { user, loading, guest, signup, login, logout, continueAsGuest }
+  const value = { user, loading, guest, signup, login, logout, continueAsGuest, exitGuest }
   return createElement(AuthContext.Provider, { value }, children)
 }
 

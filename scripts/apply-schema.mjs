@@ -7,18 +7,22 @@ import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 import pg from 'pg'
 
+// Prefer the direct (non-pooled) endpoint for DDL — pgbouncer can reject
+// session-level statements that a schema migration needs.
 function loadDatabaseUrl() {
-  if (process.env.DATABASE_URL) return process.env.DATABASE_URL
+  const fromEnv = process.env.DATABASE_URL_UNPOOLED || process.env.DATABASE_URL
+  if (fromEnv) return fromEnv
+  const found = {}
   try {
     const env = readFileSync(join(process.cwd(), '.env.local'), 'utf8')
     for (const line of env.split(/\r?\n/)) {
-      const m = line.match(/^\s*DATABASE_URL\s*=\s*(.+?)\s*$/)
-      if (m && m[1]) return m[1].replace(/^["']|["']$/g, '')
+      const m = line.match(/^\s*(DATABASE_URL|DATABASE_URL_UNPOOLED)\s*=\s*(.+?)\s*$/)
+      if (m && m[2]) found[m[1]] = m[2].replace(/^["']|["']$/g, '')
     }
   } catch {
     /* no .env.local */
   }
-  return ''
+  return found.DATABASE_URL_UNPOOLED || found.DATABASE_URL || ''
 }
 
 const url = loadDatabaseUrl()
