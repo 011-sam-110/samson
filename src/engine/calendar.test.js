@@ -113,9 +113,9 @@ describe('termNudge', () => {
     expect(n.phase).toBe('ending')
     expect(n.message).toMatch(/nearly up/i)
   })
-  it('points a term-end nudge at Make it last when surviveUntil is set', () => {
+  it('points a term-end nudge at Make a lump last when surviveUntil is set', () => {
     const n = termNudge({ termSpans: [term], surviveUntil: '2026-12-14' }, '2026-12-05')
-    expect(n.message).toMatch(/Make it last/i)
+    expect(n.message).toMatch(/Make a lump last/i)
   })
   it('does not nudge for a term with lots of time left', () => {
     expect(termNudge({ termSpans: [term] }, '2026-10-01')).toBe(null)

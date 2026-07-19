@@ -53,7 +53,7 @@ export function ExpenseForm({ onDone }) {
       </Field>
       <Field
         label="Category"
-        hint="Rent, bills and subscriptions are reserved separately, so they don't count towards your daily spending pace. Everything else does."
+        hint="Rent, bills and subscriptions are reserved separately, so they don't count towards your daily spending rate. Everything else does."
       >
         <div className="chip-grid">
           {CATEGORIES.map((c) => (
@@ -275,8 +275,8 @@ export function SurviveForm({ onDone }) {
   return (
     <form onSubmit={submit}>
       <p style={{ marginTop: 0, color: 'var(--muted)', fontSize: 14 }}>
-        Got a loan or grant that has to see you through the term? Tell Leeway the date it needs to last to, and it'll pace your
-        current balance across every day until then.
+        Got a loan or grant that has to see you through the term? Tell Leeway the date it needs to last to, and it'll spread your
+        current balance evenly across every day until then.
       </p>
       <Field label="Make it last until">
         <input type="date" value={date} min={today()} onChange={(e) => setDate(e.target.value)} />
