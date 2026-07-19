@@ -1,16 +1,18 @@
-import { IconHome, IconLedger, IconInsights, IconGoals } from './icons.jsx'
+import { IconHome, IconLedger, IconCalendar, IconInsights, IconGoals } from './icons.jsx'
 
 // One name per section, used on desktop and mobile alike. The nav label, the
 // page's <h1> and the way we talk about it in copy all say the same word —
 // a sidebar that says "Transactions" and a tab bar that says "Money" is the
 // fastest way to make someone feel lost in their own money app.
 //
-// Four. "Can I spend?" was never a place, so it became a sheet on Today. And
-// "Planned" was really just goals with a date attached — money you've promised
-// away — so it moved inside Goals rather than competing with it for a column.
+// "Overview" leads: the quick daily glance (balance + what's safe to spend).
+// The calendar earned its own tab so it isn't buried inside Insights. "Can I
+// spend?" was never a place, so it's a sheet on Overview; "Planned" lives in
+// Goals — both are money promised away.
 const ITEMS = [
-  { key: 'home', label: 'Today', Icon: IconHome },
+  { key: 'home', label: 'Overview', Icon: IconHome },
   { key: 'money', label: 'Transactions', Icon: IconLedger },
+  { key: 'calendar', label: 'Calendar', Icon: IconCalendar },
   { key: 'insights', label: 'Insights', Icon: IconInsights },
   { key: 'goals', label: 'Goals', Icon: IconGoals },
 ]
