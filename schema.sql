@@ -115,6 +115,8 @@ begin
   foreach t in array array['profiles','transactions','bills','income_sources','goals','events','term_spans'] loop
     execute format('alter table %I enable row level security', t);
     execute format('alter table %I force row level security', t);
+    -- drop-then-create so re-applying this whole file is safe (idempotent).
+    execute format('drop policy if exists %1$s_isolation on %1$I', t);
     execute format($p$create policy %1$s_isolation on %1$I
       using (user_id = current_setting('app.user_id', true))
       with check (user_id = current_setting('app.user_id', true))$p$, t);
