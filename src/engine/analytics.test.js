@@ -9,6 +9,8 @@ import {
   recurringSpends,
   projectedMonthEnd,
   costToGoal,
+  dailySpendSeries,
+  weeklySeries,
 } from './analytics.js'
 
 // Jan 2026: 1st = Thursday. So 3rd/4th = Sat/Sun, 10th/11th = Sat/Sun.
@@ -168,6 +170,45 @@ describe('projectedMonthEnd', () => {
     expect(p.daysElapsed).toBe(15)
     expect(p.daysInMonth).toBe(31)
     expect(p.projected).toBeCloseTo((150 / 15) * 31, 4)
+  })
+})
+
+describe('dailySpendSeries', () => {
+  const txns = [
+    { type: 'expense', category: 'coffee', amount: 4, date: '2026-01-01' },
+    { type: 'expense', category: 'groceries', amount: 10, date: '2026-01-01' },
+    { type: 'expense', category: 'going_out', amount: 20, date: '2026-01-03' },
+    { type: 'income', category: 'other', amount: 99, date: '2026-01-03' }, // ignored
+    { type: 'expense', category: 'eating_out', amount: 8, date: '2026-01-09' }, // out of window
+  ]
+
+  it('returns one point per inclusive day with expenses summed (0 when empty)', () => {
+    const s = dailySpendSeries(txns, '2026-01-01', '2026-01-05')
+    expect(s).toHaveLength(5)
+    expect(s.map((p) => p.date)).toEqual(['2026-01-01', '2026-01-02', '2026-01-03', '2026-01-04', '2026-01-05'])
+    expect(s[0].total).toBe(14) // 4 + 10, income excluded
+    expect(s[1].total).toBe(0)
+    expect(s[2].total).toBe(20)
+    expect(s[4].total).toBe(0)
+  })
+
+  it('is empty when the range is inverted', () => {
+    expect(dailySpendSeries(txns, '2026-01-05', '2026-01-01')).toEqual([])
+  })
+})
+
+describe('weeklySeries', () => {
+  const txns = [
+    { type: 'expense', category: 'eating_out', amount: 70, date: '2026-01-12' }, // this week
+    { type: 'expense', category: 'eating_out', amount: 30, date: '2026-01-05' }, // last week
+    { type: 'expense', category: 'rent', amount: 400, date: '2026-01-13' }, // fixed → excluded
+  ]
+
+  it('buckets trailing weeks oldest→newest, non-fixed only, last bucket ends on asOf', () => {
+    const s = weeklySeries(txns, ASOF, 2)
+    expect(s).toHaveLength(2)
+    expect(s[0]).toMatchObject({ start: '2026-01-02', end: '2026-01-08', total: 30 })
+    expect(s[1]).toMatchObject({ start: '2026-01-09', end: '2026-01-15', total: 70 }) // rent excluded
   })
 })
 

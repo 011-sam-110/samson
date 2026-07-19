@@ -9,12 +9,16 @@ import {
   biggestMover,
   recurringSpends,
   costToGoal,
+  dailySpendSeries,
+  weeklySeries,
 } from '../engine/analytics.js'
-import { goalProgress } from '../engine/finance.js'
-import { gbp, gbpWhole, pct } from '../lib/format.js'
+import { goalProgress, survivalPlan } from '../engine/finance.js'
+import { gbp, gbpWhole, pct, shortDate } from '../lib/format.js'
 import { BarRow, SplitBar } from './charts.jsx'
-import Calendar from './Calendar.jsx'
-import { IconInfo, IconAlert } from './icons.jsx'
+import { SpendOverTimeChart, WeeklyTrendChart } from './InsightCharts.jsx'
+import { Sheet, Explain } from './ui.jsx'
+import { SurviveForm } from './forms.jsx'
+import { IconInfo, IconAlert, IconBulb, IconTag, IconPiggy, IconClock, IconWallet } from './icons.jsx'
 
 const PERIODS = [
   { key: 'month', label: 'This month' },
@@ -26,6 +30,7 @@ export default function Insights() {
   const [period, setPeriod] = useState('month')
   const [tip, setTip] = useState(null)
   const [tipState, setTipState] = useState('idle') // idle | loading | error
+  const [surviveOpen, setSurviveOpen] = useState(false)
   const asOf = new Date()
   const txns = state.transactions || []
   const { from, to } = periodRange(period, asOf)
@@ -37,10 +42,11 @@ export default function Insights() {
   const trend = weeklyTrend(txns, asOf)
   const mover = biggestMover(txns, asOf)
   const leaks = recurringSpends(txns, from, to)
+  const daily = dailySpendSeries(txns, from, to)
+  const weekly = weeklySeries(txns, asOf, 6).map((w) => ({ ...w, label: shortDate(w.start) }))
+  const plan = survivalPlan(state, asOf)
 
-  // Top discretionary category → cost against the nearest goal still being saved
-  // into. An overdue goal has no weekly rate to price the spend against, and it
-  // sorts to the front on daysLeft, so it has to be excluded rather than ranked.
+  // Top discretionary category → cost against the nearest goal still being saved into.
   const topDiscretionary = cats.find((c) => c.type === 'discretionary')
   const topGoal = (state.goals || [])
     .map((g) => ({ g, p: goalProgress(g, asOf) }))
@@ -50,6 +56,38 @@ export default function Insights() {
 
   const expenseCount = txns.filter((t) => t.type === 'expense').length
   const enoughData = expenseCount >= 3
+
+  // Friendly, evergreen money-saving tips, made personal where it's cheap to.
+  const saveTips = []
+  if (topDiscretionary) {
+    saveTips.push({
+      Icon: IconBulb,
+      t: `Your biggest fun spend is ${topDiscretionary.label}`,
+      s: `That's ${gbp(topDiscretionary.total)} this period. Setting yourself a weekly cap — and tapping "Can I spend?" before you buy — is the easiest win here.`,
+    })
+  }
+  saveTips.push(
+    {
+      Icon: IconTag,
+      t: 'Flash your student discount',
+      s: 'A TOTUM card or your .ac.uk email unlocks money off food, travel, clothes and software. Get in the habit of asking "student discount?" before you pay.',
+    },
+    {
+      Icon: IconPiggy,
+      t: 'Batch-cook a few meals',
+      s: 'Cooking once and eating three times beats a daily meal deal or Deliveroo — the single biggest saver for most students.',
+    },
+    {
+      Icon: IconClock,
+      t: 'Check your subscriptions',
+      s: "Cancel anything you haven't opened this month. A couple of forgotten £8 subscriptions is a night out.",
+    },
+    {
+      Icon: IconWallet,
+      t: 'Take cash on a night out',
+      s: "Leave the card at home with a set amount in your pocket. When it's gone, it's gone — and there's no nasty surprise on Monday.",
+    },
+  )
 
   const getTip = async () => {
     setTipState('loading')
@@ -84,8 +122,8 @@ export default function Insights() {
     <div>
       <div className="page-head">
         <div className="eyebrow">Insights</div>
-        <h1>Where your money goes</h1>
-        <p>The patterns behind your spending - and the easiest things to trim.</p>
+        <h1>A report on your money</h1>
+        <p>The story behind your spending — where it goes, how this week compares, and the easiest things to trim.</p>
       </div>
 
       <div className="insights-top">
@@ -98,49 +136,25 @@ export default function Insights() {
         </div>
         <div className="insights-total">
           <div className="lbl">Spent this period</div>
-          <div className="amt2 mono">{gbp(total)}</div>
+          <div className="amt2">{gbp(total)}</div>
         </div>
-      </div>
-
-      {/* Calendar sits above the analytics gate so it shows even with sparse data —
-          it's also where term dates get set and upcoming bills/events are seen. */}
-      <div className="section-title">Spending calendar</div>
-      <div className="card card-pad">
-        <Calendar />
       </div>
 
       {!enoughData && (
         <div className="card card-pad">
-          <div className="empty">Log a few more spends and your insights will fill in here.</div>
+          <div className="empty">Log a few more spends and your charts will fill in here.</div>
         </div>
       )}
 
       {enoughData && (
         <>
-          <div className="section-title">Smart tip</div>
+          <div className="section-title">Spending over time</div>
           <div className="card card-pad">
-            {tip ? (
-              <div className="banner info" style={{ margin: 0 }}>
-                <IconInfo />
-                <div>{tip}</div>
-              </div>
-            ) : (
-              <div className="row" style={{ alignItems: 'center' }}>
-                <div className="meta">
-                  <div className="t" style={{ fontWeight: 700 }}>Want a hand?</div>
-                  <div className="s">Leeway can look at your spending and suggest one thing to cut.</div>
-                </div>
-                <button className="btn btn-primary btn-sm" onClick={getTip} disabled={tipState === 'loading'}>
-                  {tipState === 'loading' ? 'Thinking…' : 'Get a tip'}
-                </button>
-              </div>
-            )}
-            {tipState === 'error' && (
-              <p style={{ color: 'var(--over)', fontSize: 13, marginTop: 8 }}>Couldn't get a tip right now - check your API key.</p>
-            )}
+            <SpendOverTimeChart data={daily} />
+            <p className="chart-caption">How much you spent each day {period === 'month' ? 'this month' : 'over the last 30 days'}. Hover a point for the exact amount.</p>
           </div>
 
-          <div className="section-title">Where it goes</div>
+          <div className="section-title">Where your money goes</div>
           <div className="card card-pad">
             {cats.length === 0 ? (
               <div className="empty">No spending in this period.</div>
@@ -163,15 +177,16 @@ export default function Insights() {
             <div className="stat-line">
               <div>
                 <div className="k">This week</div>
-                <div className="v mono">{gbp(trend.thisWeek)}</div>
+                <div className="v">{gbp(trend.thisWeek)}</div>
               </div>
               <div>
                 <div className="k">4-week average</div>
-                <div className="v mono">{gbp(trend.fourWeekAvg)}</div>
+                <div className="v">{gbp(trend.fourWeekAvg)}</div>
               </div>
             </div>
+            <WeeklyTrendChart data={weekly} />
             {trend.vsAvgPct != null && (
-              <div className={`banner ${trend.vsAvgPct > 0.1 ? 'warn' : 'info'}`} style={{ margin: 0 }}>
+              <div className={`banner ${trend.vsAvgPct > 0.1 ? 'warn' : 'info'}`} style={{ marginBottom: 0 }}>
                 {trend.vsAvgPct > 0.1 ? <IconAlert /> : <IconInfo />}
                 <div>
                   You're spending <b>{pct(Math.abs(trend.vsAvgPct))}</b> {trend.vsAvgPct >= 0 ? 'more' : 'less'} than usual this week
@@ -188,7 +203,15 @@ export default function Insights() {
             )}
           </div>
 
-          <div className="section-title">The weekend effect</div>
+          <div className="section-head">
+            <div className="section-title" style={{ margin: 0, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              The weekend effect
+              <Explain label="the weekend effect">
+                Your everyday spending split into weekdays vs weekends, per day. Most students spend more at the weekend — this
+                just makes it easy to plan for.
+              </Explain>
+            </div>
+          </div>
           <div className="card card-pad">
             <SplitBar aLabel="Weekdays" aValue={split.weekdayPerDay} bLabel="Weekends" bValue={split.weekendPerDay} />
             {split.weekendPerDay > split.weekdayPerDay * 1.2 && (
@@ -224,7 +247,117 @@ export default function Insights() {
               </div>
             </>
           )}
+
+          <div className="section-title">Smart tip</div>
+          <div className="card card-pad">
+            {tip ? (
+              <div className="banner info" style={{ margin: 0 }}>
+                <IconInfo />
+                <div>{tip}</div>
+              </div>
+            ) : (
+              <div className="row" style={{ alignItems: 'center' }}>
+                <div className="meta">
+                  <div className="t" style={{ fontWeight: 700 }}>Want a hand?</div>
+                  <div className="s">Leeway can look at your spending and suggest one thing to cut.</div>
+                </div>
+                <button className="btn btn-primary btn-sm" onClick={getTip} disabled={tipState === 'loading'}>
+                  {tipState === 'loading' ? 'Thinking…' : 'Get a tip'}
+                </button>
+              </div>
+            )}
+            {tipState === 'error' && (
+              <p style={{ color: 'var(--over-text)', fontSize: 13, marginTop: 8 }}>Couldn't get a tip right now — check your API key.</p>
+            )}
+          </div>
         </>
+      )}
+
+      {/* ── Ways to save — friendly evergreen tips, always available ── */}
+      <div className="section-title">Ways to save</div>
+      <div className="tip-list">
+        {saveTips.map((tp, i) => (
+          <div className="tip" key={i}>
+            <span className="tip-ico">
+              <tp.Icon />
+            </span>
+            <div className="tip-body">
+              <div className="t">{tp.t}</div>
+              <div className="s">{tp.s}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* ── Make a lump last — the loan/grant stretch planner (advanced) ── */}
+      <div className="section-head">
+        <div className="section-title" style={{ margin: 0, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          Make a lump last
+          <Explain label="make a lump last">
+            Got a loan or grant that has to see you through the term? Tell Leeway the date it needs to last to, and it spreads your
+            balance evenly across every day until then — with a little extra for weekends.
+          </Explain>
+        </div>
+      </div>
+      {plan.active ? (
+        <div className="card card-pad">
+          <div className="row" style={{ alignItems: 'center' }}>
+            <div className="meta">
+              <div className="t" style={{ fontWeight: 700 }}>
+                {gbp(plan.pool)} to last {plan.daysLeft} days
+              </div>
+              <div className="s">until {shortDate(plan.surviveUntil)}</div>
+            </div>
+            <button className="btn btn-sm" onClick={() => setSurviveOpen(true)}>
+              Change
+            </button>
+          </div>
+          {plan.status === 'short' ? (
+            <div className="banner warn" style={{ marginBottom: 0 }}>
+              <IconAlert />
+              <div>
+                You're <b>{gbp(plan.shortfall)}</b> short of stretching to {shortDate(plan.surviveUntil)}. Ease a goal, trim a bill,
+                or bring the date in.
+              </div>
+            </div>
+          ) : (
+            <div className="tiles" style={{ marginTop: 12 }}>
+              <div className="tile">
+                <div className="k">Every day</div>
+                <div className="v accent">{gbp(plan.flatDaily)}</div>
+                <div className="h">flat rate</div>
+              </div>
+              <div className="tile">
+                <div className="k">Weekdays</div>
+                <div className="v">{gbp(plan.weekdayRate)}</div>
+                <div className="h">Mon–Fri</div>
+              </div>
+              <div className="tile">
+                <div className="k">Weekends</div>
+                <div className="v">{gbp(plan.weekendRate)}</div>
+                <div className="h">Sat–Sun</div>
+              </div>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="card card-pad">
+          <div className="row" style={{ alignItems: 'center' }}>
+            <div className="meta">
+              <div className="t" style={{ fontWeight: 700 }}>Got a loan or grant to stretch?</div>
+              <div className="s">Pace a lump across the whole term, not just to payday.</div>
+            </div>
+            <button className="btn btn-primary btn-sm" onClick={() => setSurviveOpen(true)}>
+              Set it up
+            </button>
+          </div>
+        </div>
+      )}
+
+      {surviveOpen && (
+        <Sheet title="Make a lump last" onClose={() => setSurviveOpen(false)}>
+          <SurviveForm onDone={() => setSurviveOpen(false)} />
+        </Sheet>
       )}
     </div>
   )
