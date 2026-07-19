@@ -117,3 +117,39 @@ export const IconCheck = (p) => (
   </svg>
 )
 
+export const IconCalendar = (p) => (
+  <svg viewBox="0 0 24 24" {...S} {...p}>
+    <rect x="4" y="5" width="16" height="16" rx="2" />
+    <path d="M4 9h16M8 3v4M16 3v4" />
+  </svg>
+)
+
+export const IconPiggy = (p) => (
+  <svg viewBox="0 0 24 24" {...S} {...p}>
+    <path d="M4 13a6 5 0 0 1 6-5h3a6 5 0 0 1 6 5 6 5 0 0 1-2 3.7V20h-3v-1.5H9V20H6v-3.3A6 5 0 0 1 4 13z" />
+    <path d="M15 8.2 16 5M9.5 11.5h.01" />
+    <path d="M3.5 12H2" />
+  </svg>
+)
+
+export const IconBulb = (p) => (
+  <svg viewBox="0 0 24 24" {...S} {...p}>
+    <path d="M9 18h6M10 21h4" />
+    <path d="M12 3a6 6 0 0 0-4 10.5c.7.7 1 1.2 1 2.5h6c0-1.3.3-1.8 1-2.5A6 6 0 0 0 12 3z" />
+  </svg>
+)
+
+export const IconTag = (p) => (
+  <svg viewBox="0 0 24 24" {...S} {...p}>
+    <path d="M4 4h7l9 9-7 7-9-9z" />
+    <circle cx="8.5" cy="8.5" r="1.4" fill="currentColor" stroke="none" />
+  </svg>
+)
+
+export const IconClock = (p) => (
+  <svg viewBox="0 0 24 24" {...S} {...p}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 7v5l3 2" />
+  </svg>
+)
+

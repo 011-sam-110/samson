@@ -2,10 +2,13 @@ import { useEffect, useState } from 'react'
 
 // The signature: a spend speedometer. The marker is your CURRENT daily spend;
 // the coloured arc is measured against your TARGET (sustainable) daily rate.
-// Aqua = under the safe line, coral = a touch over, raspberry = speeding.
+// Green = under the safe line, amber = a touch over, red = spending too fast.
 //
-//   pace = currentDaily / targetDaily   (1.0 == exactly on the safe line)
+//   rate = currentDaily / targetDaily   (1.0 == exactly on the safe line)
 //   overCommitted = your fixed commitments already exceed income → pinned red.
+//
+// Colours come from CSS tokens (--go / --warn / --over, --gauge-*), so the dial
+// stays muted-professional and flips cleanly between light and dark.
 
 const CX = 140
 const CY = 140
@@ -24,31 +27,32 @@ function arc(tA, tB) {
   return `M ${x1} ${y1} A ${R} ${R} 0 0 1 ${x2} ${y2}`
 }
 
-export function zoneOf(pace, overCommitted) {
+export function zoneOf(rate, overCommitted) {
   if (overCommitted) return 'over'
-  if (pace == null) return 'go'
-  if (pace < 1) return 'go'
-  if (pace < 1.5) return 'tight'
+  if (rate == null) return 'go'
+  if (rate < 1) return 'go'
+  if (rate < 1.5) return 'tight'
   return 'over'
 }
 
-const ZONE_COLOR = { go: '#78EBE5', tight: '#FF7F50', over: '#E43673' }
+const ZONE_VAR = { go: 'var(--go)', tight: 'var(--warn)', over: 'var(--over)' }
 
 // Dial ticks, minus the two that would collide with the safe-line notch.
 const TICKS = Array.from({ length: 21 }, (_, i) => i / 20).filter((t) => Math.abs(t - 0.5) > 0.02)
 
 export default function Gauge({ pace, overCommitted }) {
+  const rate = pace // kept prop name; it's the current/target ratio
   const [ready, setReady] = useState(false)
   useEffect(() => {
     const id = requestAnimationFrame(() => setReady(true))
     return () => cancelAnimationFrame(id)
   }, [])
 
-  const zone = zoneOf(pace, overCommitted)
+  const zone = zoneOf(rate, overCommitted)
   // Marker position. Scale tops out at 2× target so the safe line sits dead centre.
-  const t = overCommitted ? 0.94 : pace == null ? 0.5 : Math.max(0, Math.min(pace / 2, 1))
+  const t = overCommitted ? 0.94 : rate == null ? 0.5 : Math.max(0, Math.min(rate / 2, 1))
   const rot = ready ? (t - 0.5) * 180 : -90
-  const markColor = ZONE_COLOR[zone]
+  const markColor = ZONE_VAR[zone]
 
   // Target/"safe line" notch at the top.
   const [nx, nyOut] = point(0.5, R + STROKE / 2 + 5)
@@ -56,33 +60,9 @@ export default function Gauge({ pace, overCommitted }) {
   const [mx, my] = point(0.5) // marker's home position (top); rotated into place
 
   return (
-    <svg className="gauge-svg" viewBox="0 0 280 176" role="img" aria-label={`Spending pace: ${zone}`}>
-      <defs>
-        {/* depth comes from fading the aqua, not from a second teal: the stop
-            this replaced was an invented sixth colour, off-palette */}
-        <linearGradient id="g-go" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor="#78EBE5" stopOpacity="0.55" />
-          <stop offset="100%" stopColor="#78EBE5" />
-        </linearGradient>
-        <linearGradient id="g-tight" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor="#FFA9E7" />
-          <stop offset="100%" stopColor="#FF7F50" />
-        </linearGradient>
-        <linearGradient id="g-over" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor="#FF7F50" />
-          <stop offset="100%" stopColor="#E43673" />
-        </linearGradient>
-        <filter id="g-glow" x="-60%" y="-60%" width="220%" height="220%">
-          <feGaussianBlur stdDeviation="7" result="blur" />
-          <feMerge>
-            <feMergeNode in="blur" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
-      </defs>
-
+    <svg className="gauge-svg" viewBox="0 0 280 176" role="img" aria-label={`Spending rate: ${zone}`}>
       {/* base track */}
-      <path d={arc(0, 1)} stroke="rgba(255,255,255,0.08)" strokeWidth={STROKE} fill="none" strokeLinecap="round" />
+      <path d={arc(0, 1)} style={{ stroke: 'var(--gauge-track)' }} strokeWidth={STROKE} fill="none" strokeLinecap="round" />
 
       {/* ticks — the "instrument" texture */}
       {TICKS.map((tick) => {
@@ -96,20 +76,20 @@ export default function Gauge({ pace, overCommitted }) {
             y1={y1}
             x2={x2}
             y2={y2}
-            stroke={major ? 'rgba(255,255,255,0.34)' : 'rgba(255,255,255,0.14)'}
+            style={{ stroke: major ? 'var(--gauge-tick-major)' : 'var(--gauge-tick)' }}
             strokeWidth={major ? 1.8 : 1.2}
             strokeLinecap="round"
           />
         )
       })}
 
-      {/* zones — cool to hot, left to right */}
-      <path d={arc(0, 0.5)} stroke="url(#g-go)" strokeWidth={STROKE} fill="none" strokeLinecap="round" />
-      <path d={arc(0.5, 0.75)} stroke="url(#g-tight)" strokeWidth={STROKE} fill="none" />
-      <path d={arc(0.75, 1)} stroke="url(#g-over)" strokeWidth={STROKE} fill="none" strokeLinecap="round" />
+      {/* zones — green → amber → red, left to right (muted tokens) */}
+      <path d={arc(0, 0.5)} style={{ stroke: 'var(--go)' }} strokeWidth={STROKE} fill="none" strokeLinecap="round" />
+      <path d={arc(0.5, 0.75)} style={{ stroke: 'var(--warn)' }} strokeWidth={STROKE} fill="none" />
+      <path d={arc(0.75, 1)} style={{ stroke: 'var(--over)' }} strokeWidth={STROKE} fill="none" strokeLinecap="round" />
 
-      {/* the safe line: the whole point of the dial, so it gets a hard white notch */}
-      <line x1={nx} y1={nyOut} x2={nx} y2={nyIn} stroke="#fff" strokeWidth="3" strokeLinecap="round" />
+      {/* the safe line: the whole point of the dial, so it gets a hard notch */}
+      <line x1={nx} y1={nyOut} x2={nx} y2={nyIn} style={{ stroke: 'var(--gauge-notch)' }} strokeWidth="3" strokeLinecap="round" />
 
       {/* "you are here" marker — rides the arc, keeping the centre clear for the number */}
       <g
@@ -119,10 +99,9 @@ export default function Gauge({ pace, overCommitted }) {
           transition: 'transform 900ms cubic-bezier(.2,.85,.25,1)',
         }}
       >
-        <circle cx={mx} cy={my} r="13" fill={markColor} opacity="0.3" filter="url(#g-glow)" />
-        <circle cx={mx} cy={my} r="12" style={{ fill: 'var(--panel)' }} />
-        <circle cx={mx} cy={my} r="12" fill="none" stroke={markColor} strokeWidth="3.5" />
-        <circle cx={mx} cy={my} r="4.5" fill={markColor} />
+        <circle cx={mx} cy={my} r="12" style={{ fill: 'var(--gauge-face)' }} />
+        <circle cx={mx} cy={my} r="12" fill="none" style={{ stroke: markColor }} strokeWidth="3.5" />
+        <circle cx={mx} cy={my} r="4.5" style={{ fill: markColor }} />
       </g>
     </svg>
   )

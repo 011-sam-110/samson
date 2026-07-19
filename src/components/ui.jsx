@@ -1,5 +1,48 @@
-import { useEffect, useRef, useState } from 'react'
-import { IconClose } from './icons.jsx'
+import { useEffect, useId, useRef, useState } from 'react'
+import { IconClose, IconInfo } from './icons.jsx'
+
+// A small ⓘ button that reveals a plain-English explanation. Built for the
+// "no unexplained jargon" rule: keyboard-focusable, toggles on click/Enter,
+// closes on Escape or an outside click, and announces itself to screen readers.
+export function Explain({ label, children }) {
+  const [open, setOpen] = useState(false)
+  const wrapRef = useRef(null)
+  const id = useId()
+
+  useEffect(() => {
+    if (!open) return
+    const onDown = (e) => {
+      if (!wrapRef.current?.contains(e.target)) setOpen(false)
+    }
+    const onKey = (e) => e.key === 'Escape' && setOpen(false)
+    document.addEventListener('mousedown', onDown)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDown)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [open])
+
+  return (
+    <span className="explain" ref={wrapRef}>
+      <button
+        type="button"
+        className="explain-btn"
+        aria-label={`What does "${label}" mean?`}
+        aria-expanded={open}
+        aria-describedby={open ? id : undefined}
+        onClick={() => setOpen((o) => !o)}
+      >
+        <IconInfo />
+      </button>
+      {open && (
+        <span className="explain-pop" role="tooltip" id={id}>
+          {children}
+        </span>
+      )}
+    </span>
+  )
+}
 
 // Bottom-sheet / modal dialog. Closes on backdrop click or Escape.
 export function Sheet({ title, onClose, children }) {
