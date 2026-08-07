@@ -366,3 +366,37 @@ Target: usable before students return, ~mid-to-late September.
 6. **Band thresholds and Can-I-Spend copy** — proposed above; does he want to write the
    wording himself, given how much of this is about tone?
 7. **Palette hex sign-off** (§3).
+
+## 9. Where we left off — 2026-08-07
+
+**State:** spec complete, nothing implemented. Sam is getting the §8 questions answered by the
+client. No branch has been cut; `main` carries only the docs commit.
+
+**Client review page** (his palette, his worked numbers, the five layouts, the seven questions):
+<https://claude.ai/code/artifact/79d157e1-6bc6-4510-ae20-969120f58983>
+
+### Resume here
+
+Start with the **dated contribution ledger (§2.2a)**. It's the only piece of phase 1 that no
+answer can change — saving pace is uncomputable without it — so it's safe to build while the
+questions are out. Order: new `contributions` collection → `goal_contributions` table + RLS →
+`migrate.js` turning existing `goals.saved` into an opening balance → tests (a pre-migration
+goal with `saved: 180` must still show £180 and contribute nothing to pace).
+
+Also safe to start, none of it depends on an answer: the Pocko rename, the type scale, and the
+`<Page>` / `<PageSummary>` primitives.
+
+**Do not start** the pace formulas, the bands, or the Can-I-Spend tiers. Questions 1–6 all move
+that arithmetic, and Sam's stated top priority is that it's right rather than early.
+
+### Gotchas worth carrying forward
+
+- This repo is **nested inside the home repo**. Commit from inside `Samson/`, never the parent.
+- **Stage explicit paths.** Untracked secrets live in these trees; `git add -A` has already
+  leaked a live key in another project.
+- The docs commit (`1e58ab5`) is **committed but not pushed** — deliberate, waiting on Sam.
+- Changing §2.1 breaks the existing `pacePct` tests by design. Review that diff; don't let it be
+  auto-fixed into agreement.
+- The colour video is a **phone photo of a screen**. Never sample hex from it.
+- Transcripts of both voice notes and the colour video are in the client-feedback doc — the
+  source audio lives in `~/Downloads` and won't survive a cleanup.
