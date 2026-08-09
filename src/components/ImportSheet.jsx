@@ -61,7 +61,7 @@ export default function ImportSheet({ onDone }) {
   return (
     <div>
       <p style={{ marginTop: 0, color: 'var(--muted)', fontSize: 14 }}>
-        Screenshot your bank transactions and Leeway reads them in. Heads up: the image is sent to your configured AI provider to
+        Screenshot your bank transactions and Pocko reads them in. Heads up: the image is sent to your configured AI provider to
         pull out the text.
       </p>
 

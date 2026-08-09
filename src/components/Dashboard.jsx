@@ -1,200 +1,238 @@
 import { useState } from 'react'
 import { useStore } from '../store/store.js'
-import { daysBetween } from '../engine/finance.js'
-import { gbp, gbpWhole, shortDate, fullDate } from '../lib/format.js'
-import Gauge, { zoneOf } from './Gauge.jsx'
+import { spendingPace } from '../engine/pace.js'
+import { overviewSummary } from '../engine/summaries.js'
+import { daysBetween } from '../engine/dates.js'
+import { gbp, gbpWhole, shortDate } from '../lib/format.js'
+import { Page, PageSummary, Section } from './Page.jsx'
+import Gauge from './Gauge.jsx'
 import { Sheet, Explain, useCountUp } from './ui.jsx'
 import { ExpenseForm, ReconcileForm } from './forms.jsx'
 import CanISpend from './CanISpend.jsx'
-import { IconAlert, IconInfo, IconPlus, IconWallet } from './icons.jsx'
+import { IconAlert, IconPlus } from './icons.jsx'
 
-const ZONE_PILL = { go: 'On track', tight: 'Spending fast', over: 'Too fast' }
+// Overview, in the order the client asked for:
+//
+//   Spending Pace → Can I Spend? → important upcoming commitments → supporting info
+//
+// "rather than making Can I Spend another small card buried amongst analytics."
+//
+// The <Page> component enforces that order structurally — this file supplies the
+// contents of each slot but does not get to decide where they land.
+
+const BAND_LABEL = {
+  comfortable: 'Comfortably under',
+  'on-pace': 'On pace',
+  over: 'A little over',
+  attention: 'Well over',
+  overcommitted: 'Over-committed',
+  unknown: 'Not enough logged yet',
+}
+
+const BAND_PILL = { comfortable: 'go', 'on-pace': 'go', over: 'tight', attention: 'over', overcommitted: 'over', unknown: '' }
 
 export default function Dashboard() {
-  const { state, dash } = useStore()
-  const [sheet, setSheet] = useState(null) // 'expense' | 'reconcile' | 'canispend'
+  const { state, actions } = useStore()
+  const [sheet, setSheet] = useState(null)
 
-  const zone = zoneOf(dash.pacePct, dash.overCommitted)
-  const overspent = dash.overspent
-  const count = useCountUp(overspent ? 0 : Math.max(dash.safePerDay, 0))
+  const asOf = new Date()
+  const pace = spendingPace(state, asOf)
+  const summary = overviewSummary(state, asOf)
+  const known = pace.dataQuality === 'ok' && !pace.overcommitted
 
-  const checkedAgo = daysBetween(state.lastReconciled, new Date())
-  const zonePill = dash.overCommitted ? 'Over-committed' : ZONE_PILL[zone]
+  // The hero figure is the one the client asks for by name: what is left today.
+  const count = useCountUp(pace.overcommitted ? 0 : Math.max(pace.leftToday, 0))
+  const checkedAgo = daysBetween(state.lastReconciled, asOf)
+
+  const upcoming = [...pace.commitmentRows, ...pace.plannedSpendRows]
+    .sort((a, b) => new Date(a.date) - new Date(b.date))
+    .slice(0, 5)
 
   return (
-    <div>
-      <div
-        className="page-head"
-        style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}
-      >
-        <div>
-          <div className="eyebrow">{fullDate(new Date())}</div>
-          <h1>Overview</h1>
-        </div>
-        <button
-          className="btn btn-sm btn-tinted"
-          onClick={() => setSheet('reconcile')}
-          title="Type in your real bank balance to re-sync Leeway"
-        >
-          Reconcile balance
-        </button>
-      </div>
+    <Page title="Overview">
+      <Section slot="summary">
+        <PageSummary summary={summary} />
+      </Section>
 
-      {/* ── the very first thing: your total balance ── */}
-      <div className="balance-card">
-        <div className="balance-top">
-          <IconWallet />
-          <span>Total balance</span>
-        </div>
-        <div className="balance-num">{gbp(state.balance)}</div>
-        <div className="balance-sub">
-          What's in your account · last checked {checkedAgo <= 0 ? 'today' : `${checkedAgo} day${checkedAgo === 1 ? '' : 's'} ago`}
-        </div>
-      </div>
+      {/* ── 1. Spending pace ───────────────────────────────────────────────── */}
+      <Section slot="hero">
+        <div className="panel">
+          <div className="panel-top">
+            <span className="label">
+              Spending pace
+              <Explain label="spending pace">
+                How fast you're spending the money you can actually afford to spend, compared with how fast you'd
+                need to spend it to reach {shortDate(pace.end)} safely. <b>1.00</b> is exactly on pace — under it
+                you're spending slower than you can afford, over it you're spending faster.
+              </Explain>
+            </span>
+            <span className={`pill ${BAND_PILL[pace.band]}`}>{BAND_LABEL[pace.band]}</span>
+          </div>
 
-      {/* ── then the signature: what can I safely spend today? ── */}
-      <div className="panel">
-        <div className="panel-top">
-          <span className="label" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-            Spending rate
-            <Explain label="spending rate">
-              The needle shows how fast you're spending compared with a pace you can keep up. In the{' '}
-              <b>green</b> you're fine, <b>amber</b> means ease off, <b>red</b> means you're spending too fast to last until payday.
-            </Explain>
-          </span>
-          <span className={`pill ${zone}`}>{zonePill}</span>
-        </div>
+          <div className="gauge-wrap">
+            <Gauge ratio={pace.ratio} band={pace.band} dataQuality={pace.dataQuality} />
+            <div className="gauge-readout">
+              <div className="cap">{pace.overcommitted ? 'Nothing spare today' : 'Left to spend today'}</div>
+              <div className="num">{gbpWhole(count)}</div>
+              <div className="sub">
+                {pace.overcommitted
+                  ? `${gbp(pace.shortfall)} short before ${shortDate(pace.end)}`
+                  : `${gbpWhole(pace.leftThisWeek)} left this week`}
+              </div>
+            </div>
+          </div>
 
-        <div className="gauge-wrap">
-          <Gauge pace={dash.pacePct} overCommitted={dash.overCommitted} />
-          <div className="gauge-readout">
-            <div className="cap">{overspent ? 'Nothing spare today' : 'Safe to spend today'}</div>
-            <div className={`num ${zone}`}>{gbpWhole(count)}</div>
-            <div className="sub">
-              {overspent
-                ? `${gbp(dash.overAmount)} short before payday`
-                : `${gbpWhole(dash.safeThisWeek)} left this week`}
+          {/* The maths, in one line, because the client wants the figure checkable. */}
+          {known && (
+            <p className="pace-working">
+              You're spending <b>{gbp(pace.actualDaily)}</b> a day. Your pace allows{' '}
+              <b>{gbp(pace.targetDaily)}</b> a day — that's <b>{pace.ratio.toFixed(2)}×</b>.
+            </p>
+          )}
+          {pace.dataQuality === 'insufficient' && !pace.overcommitted && (
+            <p className="pace-working">
+              Only {pace.loggedDays} of the last 7 days have any spending logged, so there isn't enough yet to give
+              you a pace.{' '}
+              <button type="button" className="linkish" onClick={() => setSheet('expense')}>
+                Log a spend
+              </button>{' '}
+              and this fills in.
+            </p>
+          )}
+        </div>
+      </Section>
+
+      {/* ── 2. Can I spend? — a full-width slab, not a buried card ─────────── */}
+      <Section slot="hero">
+        <CanISpend />
+      </Section>
+
+      {/* ── 3. What's coming ──────────────────────────────────────────────── */}
+      <Section slot="detail">
+        <div className="sec-head">
+          <h2>What's coming out</h2>
+          <span className="sec-note">before {shortDate(pace.end)}</span>
+        </div>
+        <div className="card">
+          {upcoming.length === 0 && <div className="empty-row">Nothing due before then.</div>}
+          {upcoming.map((c, i) => (
+            <div className="row" key={`${c.label}-${i}`}>
+              <div className="meta">
+                <div className="t">{c.label}</div>
+                <div className="s">{shortDate(c.date)}</div>
+              </div>
+              <div className="amt neg">−{gbp(c.amount)}</div>
+            </div>
+          ))}
+          {pace.justAfterPeriod.map((c, i) => (
+            <div className="row is-after" key={`after-${i}`}>
+              <div className="meta">
+                <div className="t">{c.label}</div>
+                {/* Not held back from the maths — said out loud instead, so the number
+                    above still reconciles with anyone's own spreadsheet. */}
+                <div className="s">{shortDate(c.date)} — just after your money lands</div>
+              </div>
+              <div className="amt">{gbp(c.amount)}</div>
+            </div>
+          ))}
+        </div>
+      </Section>
+
+      {pace.overcommitted && (
+        <Section slot="detail">
+          <div className="banner warn">
+            <IconAlert />
+            <div>
+              You're <b>{gbp(pace.shortfall)}</b> short before {shortDate(pace.end)}. Trimming a planned spend, or
+              moving a goal's deadline back, is the quickest way to close it.
+            </div>
+          </div>
+        </Section>
+      )}
+
+      {/* ── 4. Supporting information ─────────────────────────────────────── */}
+      <Section slot="detail">
+        <div className="tiles">
+          <div className="tile">
+            <div className="k">Spending so far</div>
+            <div className="v">{gbp(pace.actualDaily)}</div>
+            <div className="h">a day over {pace.daysElapsed} days</div>
+          </div>
+          <div className="tile">
+            <div className="k">Left this week</div>
+            <div className="v accent">{gbpWhole(pace.leftThisWeek)}</div>
+            <div className="h">{pace.daysRemaining} days until {shortDate(pace.end)}</div>
+          </div>
+          <div className="tile">
+            <div className="k">In your account</div>
+            <div className="v">{gbp(state.balance)}</div>
+            <div className="h">
+              checked {checkedAgo <= 0 ? 'today' : `${checkedAgo} day${checkedAgo === 1 ? '' : 's'} ago`}
             </div>
           </div>
         </div>
-      </div>
+      </Section>
 
-      {/* ── the two things you actually came to do ──
-          On mobile they become the two brand-coloured slabs you can hit with a
-          thumb without looking. */}
-      <div className="today-actions">
-        <button className="act act-violet" onClick={() => setSheet('expense')}>
-          <IconPlus />
-          <span>Log a spend</span>
-        </button>
-        <button className="act act-aqua" onClick={() => setSheet('canispend')}>
-          <IconWallet />
-          <span>Can I spend…?</span>
-        </button>
-      </div>
-
-      {/* ── trouble states ── */}
-      {overspent && (
-        <div className="banner warn">
-          <IconAlert />
-          <div>
-            You're <b>{gbp(dash.overAmount)}</b> short before your next payday. Trim to <b>{gbp(dash.recoveryPerDay)}/day</b> to
-            claw it back — or push a goal deadline out.
+      {/* ── 5. The working, for anyone who wants it ───────────────────────── */}
+      <Section slot="tools">
+        <div className="sec-head">
+          <h2>How that spending money is worked out</h2>
+        </div>
+        <div className="card">
+          <div className="row">
+            <div className="meta"><div className="t">Money in your account</div></div>
+            <div className="amt">{gbp(pace.balance)}</div>
           </div>
-        </div>
-      )}
-      {!overspent && dash.overCommitted && (
-        <div className="banner warn">
-          <IconAlert />
-          <div>
-            Your bills and goals cost more than you earn (<b>{gbp(-dash.targetDaily)}/day</b> short). Something has to give — ease a
-            goal or cut a recurring cost.
-          </div>
-        </div>
-      )}
-
-      {/* ── three quick numbers, each explained in plain English ── */}
-      <div className="tiles">
-        <div className="tile">
-          <div className="k">
-            Spending rate
-            <Explain label="spending rate">
-              How fast you're spending right now — your everyday spending (not rent or bills) averaged over the last two weeks.
-            </Explain>
-          </div>
-          <div className="v">{gbp(dash.currentDaily)}</div>
-          <div className="h">a day, on average</div>
-        </div>
-        <div className="tile t-aqua">
-          <div className="k">
-            Safe daily rate
-            <Explain label="safe daily rate">
-              The most you can spend each day and still cover your bills and savings. Stay under it and you'll never come up short
-              before payday.
-            </Explain>
-          </div>
-          <div className="v accent">{gbp(Math.max(dash.targetDaily, 0))}</div>
-          <div className="h">a day, and you never slip</div>
-        </div>
-        <div className="tile">
-          <div className="k">Next payday</div>
-          <div className="v">{dash.nextIncomeDate ? `${dash.daysToPay}d` : '—'}</div>
-          <div className="h">{dash.nextIncomeDate ? shortDate(dash.nextIncomeDate) : 'no income set up yet'}</div>
-        </div>
-      </div>
-
-      {/* ── why this number (trust, in plain words) ── */}
-      <div className="section-head">
-        <div className="section-title" style={{ margin: 0 }}>
-          Why you can spend {gbpWhole(Math.max(dash.safePerDay, 0))} a day
-        </div>
-        <Explain label="why this number">
-          We start from your balance, set aside what's already promised (bills, savings, planned nights out), then share what's
-          left evenly across the days until payday.
-        </Explain>
-      </div>
-      <div className="card card-pad">
-        <div className="banner info" style={{ marginTop: 0, marginBottom: 8 }}>
-          <IconInfo />
-          <div>
-            Of your <b>{gbp(state.balance)}</b> balance, here's what's already spoken for before payday in {dash.daysToPay} days:
-          </div>
-        </div>
-        <div className="row">
-          <div className="meta">
-            <div className="t">Bills due before payday</div>
-            <div className="s">we set rent aside even if it's due just after payday</div>
-          </div>
-          <div className="amt neg">−{gbp(dash.billsReserve)}</div>
-        </div>
-        <div className="row">
-          <div className="meta">
-            <div className="t">Money for your goals</div>
-            <div className="s">keeps your savings on schedule</div>
-          </div>
-          <div className="amt neg">−{gbp(dash.goalsReserve)}</div>
-        </div>
-        {dash.eventsReserve > 0 && (
+          {pace.expectedIncome > 0 && (
+            <div className="row">
+              <div className="meta">
+                <div className="t">Money arriving before {shortDate(pace.end)}</div>
+              </div>
+              <div className="amt pos">+{gbp(pace.expectedIncome)}</div>
+            </div>
+          )}
           <div className="row">
             <div className="meta">
-              <div className="t">Planned spends</div>
-              <div className="s">the nights out and trips you've already flagged</div>
+              <div className="t">Rent, bills and regular payments</div>
+              <div className="s">everything due before {shortDate(pace.end)}</div>
             </div>
-            <div className="amt neg">−{gbp(dash.eventsReserve)}</div>
+            <div className="amt neg">−{gbp(pace.commitments)}</div>
           </div>
-        )}
-        <div className="row">
-          <div className="meta">
-            <div className="t" style={{ fontWeight: 700 }}>
-              Free to spend over {dash.daysToPay} days
+          {pace.plannedSpends > 0 && (
+            <div className="row">
+              <div className="meta">
+                <div className="t">Things you've already planned</div>
+              </div>
+              <div className="amt neg">−{gbp(pace.plannedSpends)}</div>
             </div>
-            <div className="s">that's your {gbp(dash.safePerDay)} a day</div>
-          </div>
-          <div className="amt" style={{ color: 'var(--brand-ink)' }}>
-            {gbp(Math.max(dash.pool, 0))}
+          )}
+          {pace.plannedSaving > 0 && (
+            <div className="row">
+              <div className="meta">
+                <div className="t">Money set aside for your goals</div>
+                <div className="s">what they need over the next {pace.daysRemaining} days</div>
+              </div>
+              <div className="amt neg">−{gbp(pace.plannedSaving)}</div>
+            </div>
+          )}
+          <div className="row row-total">
+            <div className="meta">
+              <div className="t">Yours to spend over {pace.daysRemaining} days</div>
+              <div className="s">that's {gbp(pace.targetDaily)} a day</div>
+            </div>
+            <div className="amt accent">{gbp(Math.max(pace.available, 0))}</div>
           </div>
         </div>
-      </div>
+
+        <div className="tool-actions">
+          <button className="btn btn-tinted" onClick={() => setSheet('expense')}>
+            <IconPlus /> Log a spend
+          </button>
+          <button className="btn" onClick={() => setSheet('reconcile')}>
+            Update your balance
+          </button>
+        </div>
+      </Section>
 
       {sheet === 'expense' && (
         <Sheet title="Log a spend" onClose={() => setSheet(null)}>
@@ -202,15 +240,10 @@ export default function Dashboard() {
         </Sheet>
       )}
       {sheet === 'reconcile' && (
-        <Sheet title="Reconcile balance" onClose={() => setSheet(null)}>
+        <Sheet title="Update your balance" onClose={() => setSheet(null)}>
           <ReconcileForm onDone={() => setSheet(null)} />
         </Sheet>
       )}
-      {sheet === 'canispend' && (
-        <Sheet title="Can I spend…?" onClose={() => setSheet(null)}>
-          <CanISpend onDone={() => setSheet(null)} />
-        </Sheet>
-      )}
-    </div>
+    </Page>
   )
 }

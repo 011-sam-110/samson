@@ -1,4 +1,4 @@
-// Leeway analytics engine - pure functions over the transaction ledger.
+// Pocko analytics engine - pure functions over the transaction ledger.
 // No React, no storage. Reuses the date helpers + category typing so the
 // numbers stay consistent with the dashboard's run-rate (non-fixed spend).
 

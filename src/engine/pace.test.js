@@ -400,3 +400,19 @@ describe('underspendInsight', () => {
     expect(underspendInsight(over, '2026-08-07', { period: PERIOD })).toBeNull()
   })
 })
+
+describe('spendingPace — an account with nothing in it yet', () => {
+  // Exactly £0 available is a blank account, not a student in deficit. Shouting
+  // "you're short" at someone who has entered nothing is the app being wrong loudly.
+  it('is not treated as overcommitted at exactly zero', () => {
+    const p = spendingPace({ ...base, balance: 0 }, '2026-08-01', { period: PERIOD })
+    expect(p.overcommitted).toBe(false)
+    expect(p.band).toBe('unknown')
+    expect(p.ratio).toBeNull()
+  })
+
+  it('is treated as overcommitted a penny below zero', () => {
+    const state = { ...base, balance: 0, events: [{ id: 'e1', label: 'Ticket', amount: 0.01, date: '2026-08-05' }] }
+    expect(spendingPace(state, '2026-08-01', { period: PERIOD }).overcommitted).toBe(true)
+  })
+})

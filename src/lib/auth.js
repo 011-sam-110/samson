@@ -1,5 +1,5 @@
 // src/lib/auth.js
-// Self-managed credential auth for Leeway — password encryption + salting and
+// Self-managed credential auth for Pocko — password encryption + salting and
 // signed session tokens, built ONLY on Node's built-in `crypto` (no native deps,
 // so it deploys clean on Vercel serverless). No third-party auth provider.
 //

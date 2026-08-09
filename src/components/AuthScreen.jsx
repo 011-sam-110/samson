@@ -36,7 +36,7 @@ export default function AuthScreen() {
       <div className="auth-card">
         <div className="auth-brand">
           <span className="auth-logo" aria-hidden="true">◐</span>
-          <span className="auth-brandname">Leeway</span>
+          <span className="auth-brandname">Pocko</span>
         </div>
         <h1 className="auth-title">{isSignup ? 'Create your account' : 'Welcome back'}</h1>
         <p className="auth-sub">Know exactly what you can safely spend today.</p>
@@ -120,7 +120,7 @@ export default function AuthScreen() {
         <button type="button" className="auth-guest" onClick={continueAsGuest}>
           Just exploring? Continue as guest
         </button>
-        <p className="auth-note">Guest data stays on this device. Make an account to save it and use Leeway anywhere.</p>
+        <p className="auth-note">Guest data stays on this device. Make an account to save it and use Pocko anywhere.</p>
       </div>
     </div>
   )

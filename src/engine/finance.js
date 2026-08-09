@@ -1,4 +1,4 @@
-// Leeway finance engine - pure functions, no React, no storage.
+// Pocko finance engine - pure functions, no React, no storage.
 // Everything is expressed as a DAILY RATE, matching the "£/day like mph" framing.
 //
 // The two ideas that make the number trustworthy:

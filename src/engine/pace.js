@@ -194,7 +194,10 @@ export function spendingPace(state, asOf = new Date(), opts = {}) {
   const recent = discretionarySpend(state.transactions, addDays(today, -6), today)
   const loggedDays = new Set(recent.map((t) => iso(t.date))).size
 
-  const overcommitted = parts.available <= 0
+  // Strictly negative. Exactly £0 available is a brand-new empty account, not a
+  // student in trouble, and telling them they are short before they have entered
+  // anything is the app shouting at a blank page.
+  const overcommitted = parts.available < 0
   const insufficient = loggedDays < MIN_LOGGED_DAYS
 
   let band
@@ -229,9 +232,14 @@ export function spendingPace(state, asOf = new Date(), opts = {}) {
   }
 }
 
-// Whole pounds. "about £42" is what someone checking their phone outside a pub can
-// use; "£41.87" invites them to audit it instead of deciding.
-const money = (n) => `£${Math.abs(Math.round(n))}`
+// Whole pounds read better in a sentence — "about £42" is what someone checking
+// their phone outside a pub can act on. But daily figures are often small, and
+// rounding £7.85 and £7.79 to "£8 against the £8 they ask for" next to a ratio of
+// 1.01 makes the app look like it cannot count. Under a tenner, keep the pence.
+const money = (n) => {
+  const v = Math.abs(n)
+  return v < 10 && v % 1 !== 0 ? `£${v.toFixed(2)}` : `£${Math.round(v)}`
+}
 
 export function spendingRoom(state, asOf = new Date(), opts = {}) {
   const pace = spendingPace(state, asOf, opts)

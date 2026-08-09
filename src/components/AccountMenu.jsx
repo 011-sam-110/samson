@@ -52,7 +52,7 @@ export default function AccountMenu({ theme, setTheme }) {
     reader.onload = () => {
       try {
         const obj = parseBackup(String(reader.result))
-        if (confirm('Import this backup? It replaces everything currently in Leeway.')) {
+        if (confirm('Import this backup? It replaces everything currently in Pocko.')) {
           actions.importData(obj)
         }
       } catch (err) {
@@ -69,7 +69,7 @@ export default function AccountMenu({ theme, setTheme }) {
   }
 
   const onClearAll = () => {
-    if (confirm('Delete everything and start from an empty Leeway? This cannot be undone.')) {
+    if (confirm('Delete everything and start from an empty Pocko? This cannot be undone.')) {
       actions.clearAll()
       setSettings(false)
     }
@@ -93,7 +93,7 @@ export default function AccountMenu({ theme, setTheme }) {
       {open && (
         <div className="menu" role="menu">
           <div className="menu-head">
-            <div className="menu-title">{user ? user.username || user.email : 'Your Leeway'}</div>
+            <div className="menu-title">{user ? user.username || user.email : 'Your Pocko'}</div>
             <div className="menu-sub">
               {user ? 'Saved to your account, on any device' : 'Guest — saved on this device only'}
             </div>
@@ -104,7 +104,7 @@ export default function AccountMenu({ theme, setTheme }) {
               <IconUser />
               <span>
                 Save to an account
-                <em>Keep your data and use Leeway anywhere</em>
+                <em>Keep your data and use Pocko anywhere</em>
               </span>
             </button>
           )}
@@ -168,7 +168,7 @@ export default function AccountMenu({ theme, setTheme }) {
           <div className="set-row">
             <div className="set-meta">
               <div className="t">Appearance</div>
-              <div className="s">Leeway follows your device until you pick one here.</div>
+              <div className="s">Pocko follows your device until you pick one here.</div>
             </div>
             <Segmented
               value={theme}

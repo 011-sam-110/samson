@@ -4,6 +4,9 @@ import { migrate, CURRENT_VERSION } from './migrate.js'
 import { uid } from '../lib/id.js'
 import { computeDashboard } from '../engine/finance.js'
 
+// Deliberately still 'leeway' after the rename to Pocko: this is where every
+// existing user's data physically lives. Renaming the key would silently reset
+// the app for everyone who already has it open.
 const KEY = 'leeway:v1'
 
 function load() {
