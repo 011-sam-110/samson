@@ -12,9 +12,9 @@ const ARRAY_KEYS = ['incomeSources', 'bills', 'goals', 'events', 'transactions']
 // Collections added after v1 backups existed. Older exports predate them, so a
 // missing key is fine (migration fills it) — but a present value that isn't an
 // array is the same crash class as ARRAY_KEYS and must be rejected here.
-const OPTIONAL_ARRAY_KEYS = ['termSpans']
+const OPTIONAL_ARRAY_KEYS = ['termSpans', 'contributions']
 
-const NOT_A_BACKUP = "That doesn't look like a Leeway backup."
+const NOT_A_BACKUP = "That doesn't look like a Pocko backup."
 
 export function serializeState(state) {
   return JSON.stringify(state, null, 2)
@@ -46,7 +46,7 @@ export function backupFilename(date = new Date()) {
   const y = date.getFullYear()
   const m = String(date.getMonth() + 1).padStart(2, '0')
   const d = String(date.getDate()).padStart(2, '0')
-  return `leeway-backup-${y}-${m}-${d}.json`
+  return `pocko-backup-${y}-${m}-${d}.json`
 }
 
 export function downloadJSON(filename, text) {

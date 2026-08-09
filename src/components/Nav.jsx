@@ -13,7 +13,7 @@ const ITEMS = [
   { key: 'home', label: 'Overview', Icon: IconHome },
   { key: 'money', label: 'Transactions', Icon: IconLedger },
   { key: 'calendar', label: 'Calendar', Icon: IconCalendar },
-  { key: 'insights', label: 'Insights', Icon: IconInsights },
+  { key: 'insights', label: 'Analytics', Icon: IconInsights },
   { key: 'goals', label: 'Goals', Icon: IconGoals },
 ]
 
@@ -52,7 +52,7 @@ export default function Nav({ view, onNavigate }) {
         <div className="brand">
           <BrandMark className="brand-mark" />
           <span className="brand-name">
-            Lee<b>way</b>
+            Poc<b>ko</b>
           </span>
         </div>
         {links()}

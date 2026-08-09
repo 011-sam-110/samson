@@ -48,7 +48,7 @@ export async function callLLM({ pool, messages, vision = false, maxTokens = 1024
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${p.key}`,
-          'User-Agent': 'Leeway/1.0',
+          'User-Agent': 'Pocko/1.0',
         },
         body: JSON.stringify({ model, messages, max_tokens: maxTokens, temperature }),
       })

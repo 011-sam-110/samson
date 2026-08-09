@@ -6,6 +6,8 @@ import { Sheet } from './ui.jsx'
 import { ExpenseForm, IncomeForm } from './forms.jsx'
 import ImportSheet from './ImportSheet.jsx'
 import { IconPlus, IconTrash } from './icons.jsx'
+import { transactionsSummary } from '../engine/summaries.js'
+import { Page, PageSummary, Section } from './Page.jsx'
 
 function Avatar({ label, cls }) {
   return <div className={`avatar ${cls}`}>{(label || '?').trim().charAt(0).toUpperCase()}</div>
@@ -18,16 +20,12 @@ export default function Transactions() {
   const ledger = [...state.transactions].sort((a, b) => (a.date < b.date ? 1 : -1))
 
   return (
-    <div>
-      <div className="page-head">
-        <div className="eyebrow">In &amp; out</div>
-        <h1>Transactions</h1>
-        <p>
-          Everything in and out. Your regular income and bills at the top - these are what Leeway reserves against - then the
-          one-offs you've logged.
-        </p>
-      </div>
+    <Page title="Transactions">
+      <Section slot="summary">
+        <PageSummary summary={transactionsSummary(state, new Date())} />
+      </Section>
 
+      <Section slot="hero">
       <div style={{ display: 'flex', gap: 10, marginBottom: 4 }}>
         <button className="btn btn-primary" onClick={() => setSheet('expense')} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
           <IconPlus style={{ width: 18, height: 18 }} /> Add expense
@@ -39,7 +37,9 @@ export default function Transactions() {
           Import screenshot
         </button>
       </div>
+      </Section>
 
+      <Section slot="detail">
       <div className="section-title">Money coming in</div>
       <div className="card card-pad">
         {state.incomeSources.length === 0 && <div className="empty">No regular income set up yet.</div>}
@@ -107,6 +107,8 @@ export default function Transactions() {
         ))}
       </div>
 
+      </Section>
+
       {sheet === 'expense' && (
         <Sheet title="Add expense" onClose={() => setSheet(null)}>
           <ExpenseForm onDone={() => setSheet(null)} />
@@ -122,6 +124,6 @@ export default function Transactions() {
           <ImportSheet onDone={() => setSheet(null)} />
         </Sheet>
       )}
-    </div>
+    </Page>
   )
 }

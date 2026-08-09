@@ -1,4 +1,4 @@
-// Leeway finance engine - pure functions, no React, no storage.
+// Pocko finance engine - pure functions, no React, no storage.
 // Everything is expressed as a DAILY RATE, matching the "£/day like mph" framing.
 //
 // The two ideas that make the number trustworthy:
@@ -11,72 +11,11 @@
 // slice now, so "£24/day!" never turns into "...oh, rent landed" the day after payday.
 
 import { typeOf } from '../lib/categories.js'
+import { savedTotal } from './saving.js'
+import { toDate, daysBetween, addDays, addMonths, nextOccurrenceOnOrAfter, occurrencesInWindow, DAYS_PER_MONTH, DAYS_PER_WEEK } from './dates.js'
 
-export const DAYS_PER_MONTH = 30.4375 // average Gregorian month
-export const DAYS_PER_WEEK = 7
-
-const DAY_MS = 86400000
-
-// ── date helpers ──────────────────────────────────────────────────────────────
-export function toDate(x) {
-  if (x instanceof Date) return new Date(x.getFullYear(), x.getMonth(), x.getDate())
-  // 'YYYY-MM-DD' → local midnight (avoids UTC off-by-one)
-  const [y, m, d] = String(x).split('-').map(Number)
-  return new Date(y, m - 1, d)
-}
-
-export function daysBetween(from, to) {
-  return Math.round((toDate(to) - toDate(from)) / DAY_MS)
-}
-
-export function addDays(date, n) {
-  const d = toDate(date)
-  d.setDate(d.getDate() + n)
-  return d
-}
-
-export function addMonths(date, n) {
-  const d = toDate(date)
-  const targetDay = d.getDate()
-  d.setDate(1)
-  d.setMonth(d.getMonth() + n)
-  // clamp to end-of-month (e.g. Jan 31 + 1mo → Feb 28)
-  const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate()
-  d.setDate(Math.min(targetDay, lastDay))
-  return d
-}
-
-function stepFor(freq) {
-  return freq === 'monthly' ? (d) => addMonths(d, 1) : (d) => addDays(d, 7) // weekly/hourly cadence
-}
-
-// First occurrence of a recurring date on or after `asOf`.
-export function nextOccurrenceOnOrAfter(baseDate, freq, asOf) {
-  if (freq === 'oneoff') return toDate(baseDate)
-  const step = stepFor(freq)
-  let d = toDate(baseDate)
-  let guard = 0
-  while (d < toDate(asOf) && guard++ < 600) d = step(d)
-  return d
-}
-
-// Recurring/one-off due dates strictly within (asOf, windowEnd].
-function occurrencesInWindow(baseDate, freq, asOf, windowEnd) {
-  const after = addDays(asOf, 1)
-  if (freq === 'oneoff') {
-    const d = toDate(baseDate)
-    return d >= after && d <= toDate(windowEnd) ? [d] : []
-  }
-  const step = stepFor(freq)
-  let d = nextOccurrenceOnOrAfter(baseDate, freq, after)
-  const out = []
-  let guard = 0
-  while (d <= toDate(windowEnd) && guard++ < 600) {
-    out.push(d)
-    d = step(d)
-  }
-  return out
-}
+// Re-exported so the many existing `from './finance.js'` imports keep resolving.
+export { toDate, daysBetween, addDays, addMonths, nextOccurrenceOnOrAfter, DAYS_PER_MONTH, DAYS_PER_WEEK }
 
 // ── per-day normalisers ───────────────────────────────────────────────────────
 export function perDayFromIncome(source) {
@@ -107,9 +46,12 @@ export function perDayFromBill(bill) {
 // minus several hundred pounds a day. You cannot save into yesterday, so once
 // the deadline is gone the goal reserves nothing until the user re-dates it.
 // Goals surfaces it as "Deadline passed" rather than letting it rot silently.
-export function goalProgress(goal, asOf = new Date()) {
+export function goalProgress(goal, asOf = new Date(), contributions = []) {
   const target = Number(goal.target) || 0
-  const saved = Number(goal.saved) || 0
+  // v4: progress is the opening balance plus every dated transfer. Reading the old
+  // single `saved` field here reported every migrated goal as 0% funded, which
+  // inflated its daily reserve and dragged safe-to-spend down with it.
+  const saved = savedTotal(goal, contributions)
   const remaining = Math.max(target - saved, 0)
   const daysLeft = daysBetween(asOf, goal.deadline)
   const perDay = remaining > 0 && daysLeft > 0 ? remaining / daysLeft : 0
@@ -128,8 +70,8 @@ export function goalProgress(goal, asOf = new Date()) {
   }
 }
 
-export function dailyGoalReserve(goal, asOf = new Date()) {
-  return goalProgress(goal, asOf).perDay
+export function dailyGoalReserve(goal, asOf = new Date(), contributions = []) {
+  return goalProgress(goal, asOf, contributions).perDay
 }
 
 // ── the dashboard ───────────────────────────────────────────────────────────
@@ -179,7 +121,7 @@ export function computeDashboard(state, asOf = new Date(), opts = {}) {
   // Sustainable daily rates.
   const incomePerDay = incomeSources.reduce((s, i) => s + perDayFromIncome(i), 0)
   const billsPerDay = bills.reduce((s, b) => s + perDayFromBill(b), 0)
-  const goalsPerDay = goals.reduce((s, g) => s + dailyGoalReserve(g, asOf), 0)
+  const goalsPerDay = goals.reduce((s, g) => s + dailyGoalReserve(g, asOf, state.contributions), 0)
   const targetDaily = incomePerDay - billsPerDay - goalsPerDay
   const overCommitted = targetDaily <= 0
 
@@ -284,7 +226,7 @@ export function survivalPlan(state, asOf = new Date(), opts = {}) {
   if (!surviveUntil || surviveUntil <= toDate(asOf)) return { active: false }
 
   const windowDays = Math.max(daysBetween(asOf, surviveUntil), 1)
-  const goalsPerDay = (state.goals || []).reduce((s, g) => s + dailyGoalReserve(g, asOf), 0)
+  const goalsPerDay = (state.goals || []).reduce((s, g) => s + dailyGoalReserve(g, asOf, state.contributions), 0)
   const { incomeInWindow, billsReserve, goalsReserve, eventsReserve } = windowReserves(
     state,
     asOf,

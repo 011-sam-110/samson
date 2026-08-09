@@ -23,10 +23,11 @@ const cookieHeader = (res) => `${SESSION_COOKIE}=${parseCookies(res.cookies?.[0]
 const authenticate = (req) => userIdFromRequest(req, SECRET)
 
 const sampleState = () => ({
-  version: 3, balance: 512.4, lastReconciled: '2026-07-01', surviveUntil: null,
+  version: 4, balance: 512.4, lastReconciled: '2026-07-01', surviveUntil: null,
   incomeSources: [{ id: 'i1', label: 'Maintenance loan', kind: 'termly', amount: 2000, nextDate: '2026-09-30' }],
   bills: [{ id: 'b1', label: 'Rent', amount: 450, freq: 'monthly', nextDue: '2026-08-01' }],
-  goals: [{ id: 'g1', label: 'Interrail', target: 300, saved: 50, deadline: '2026-12-01' }],
+  goals: [{ id: 'g1', label: 'Interrail', target: 300, openingBalance: 50, deadline: '2026-12-01' }],
+  contributions: [{ id: 'c1', goalId: 'g1', amount: 25, date: '2026-07-19' }],
   events: [{ id: 'e1', label: 'Night out', amount: 40, date: '2026-07-20' }],
   termSpans: [{ id: 't1', kind: 'term', label: 'Autumn', start: '2026-09-21', end: '2026-12-11' }],
   transactions: [{ id: 'x1', type: 'expense', label: 'Tesco', amount: 23.4, category: 'groceries', date: '2026-07-18' }],
@@ -74,6 +75,13 @@ async function main() {
   check('numeric round-trips exactly (23.40)', get1.body?.state?.transactions?.[0]?.amount === 23.4)
   check('reserved-word column "end" round-trips', get1.body?.state?.termSpans?.[0]?.end === '2026-12-11')
   check('dates round-trip as YYYY-MM-DD', get1.body?.state?.bills?.[0]?.nextDue === '2026-08-01')
+  // v4: the dated contribution ledger. Saving pace is uncomputable without it, so a
+  // schema change that silently dropped these rows would take the whole feature with it.
+  check('a dated goal contribution round-trips', get1.body?.state?.contributions?.[0]?.amount === 25
+    && get1.body?.state?.contributions?.[0]?.goalId === 'g1'
+    && get1.body?.state?.contributions?.[0]?.date === '2026-07-19')
+  check('an opening balance survives as openingBalance, not saved',
+    get1.body?.state?.goals?.[0]?.openingBalance === 50 && get1.body?.state?.goals?.[0]?.saved === undefined)
 
   const stale = await handleState({ method: 'PUT', headers: { cookie }, body: { state: sampleState(), baseUpdatedAt: '2020-01-01T00:00:00.000Z' } }, { db, authenticate })
   check('stale write is rejected (409)', stale.status === 409)

@@ -1,135 +1,171 @@
 /* ─────────────────────────────────────────────────────────────────────────
-   Leeway — design system
+   Pocko — design system
 
-   A calm, trustworthy "financial app" look: white + blue + deep navy. Bright by
-   default, never neon. The LIGHT theme is the polished default (very-light-blue
-   page, white cards, soft shadows); dark mode is deep navy, not black.
+   Calm, safe, positive, relaxed — and mature with it. The brief was explicit
+   about the failure mode to avoid: going from "Revolut/HSBC" to something that
+   looks like a children's finance app. So the surfaces are warm and quiet, the
+   type does the shouting, and colour is rationed.
 
-     PALETTE
-       blue      #2563EB   the one primary — buttons, links, focus, chart data
-       navy      #0F2A4A   headings, body text, strong accents
-       ink/greys navy carried down to black / up to white — even the greys
-                 belong to the blue family, so nothing looks "off-brand grey"
+     COLOUR CARRIES MEANING, NOT DECORATION
+       teal    the primary, and Pocko's general feeling
+       green   positive / good things
+       amber   warning, getting closer to a problem
+       red     genuinely concerning
 
-     TRAFFIC LIGHT (the gauge only) — muted, professional, never fluorescent
-       go     green   under the safe line
-       tight  amber   a touch over
-       over   red     spending too fast
+     "Colours should be used strategically rather than everywhere. The point
+      isn't to make the app colourful for the sake of it; it's to make the
+      important information immediately visible."
 
-   Contrast: body ink (navy) clears ~15:1 on white; --muted clears ~5:1; the
-   blue accent (--brand-ink #1D4ED8) clears ~6.7:1 for small text; every status
-   pill is a soft tint carrying darker same-hue ink (AA). WCAG AA throughout.
+   Hierarchy matters more than the colours: big important information →
+   supporting information → detailed analytics underneath. That order is
+   enforced structurally by <Page>, not left to whoever edits a component next.
 
-   Type: Plus Jakarta Sans (display + big numbers) · Inter (body/UI).
+   No gradients. Type: Plus Jakarta Sans (display + figures) · Inter (body).
    ───────────────────────────────────────────────────────────────────────── */
 
 :root {
-  /* ── the two hues everything is built from ───────────────────────────── */
-  --blue: #2563eb; /* the primary; a fill this saturated keeps its meaning on any surface */
-  --blue-strong: #1d4ed8; /* hover / heading accent */
-  --navy: #0f2a4a; /* deep navy — text and strong accents */
+  /* ── the palette, in the client's own words ──────────────────────────────
+     "soft teal" primary · off-white background, "not plain absolute white,
+     that's a little in your face... not sandy either — think a blurry beach,
+     somewhere in the middle" · charcoal text · "an actual actual green, grass
+     green" for good things · amber for warning · orange-red for concerning.
+     No gradients.
 
-  /* ── light theme surfaces + ink ──────────────────────────────────────── */
-  --bg: #f4f7fb; /* very-light-blue page */
-  --surface: #ffffff; /* cards */
-  --surface-2: #eef3fa; /* insets, tiles, tracks */
-  --ink: #0f2a4a; /* primary text = navy (~15:1 on white) */
-  --ink-2: #33506e; /* secondary text (~8:1) */
-  --muted: #5a7088; /* captions / meta (~5.1:1) */
-  --line: #dce4ef; /* borders */
-  --line-2: #e9eef6; /* faint dividers */
+     The colour video he sent is a phone recording of a laptop screen, so its
+     pixels are worthless as hex — glare and white balance corrupt them. These
+     values are built from what he NAMED and verified for contrast by
+     calculation, not sampled from the footage.                              */
+  --teal-600: #2f7d74; /* primary fill, carries white text at 4.9:1 */
+  --teal-700: #1f5c56; /* teal when it has to BE text — 7.6:1 */
+  --teal-800: #17453f;
+  --charcoal: #22282b; /* body ink — 14.7:1 on a card */
 
-  /* the brand when it must be TEXT (links, active labels, chart ink) */
-  --brand-ink: #1d4ed8; /* 6.7:1 on white */
-  --on-brand: #ffffff; /* text riding on a blue fill (5.2:1) */
+  /* ── surfaces + ink ─────────────────────────────────────────────────── */
+  --bg: #f6f3ed; /* warm off-white — the blurry beach */
+  --surface: #fffdfa; /* cards, a shade warmer than white */
+  --surface-2: #f0ebe1; /* insets, tiles, tracks */
+  --ink: #22282b; /* charcoal */
+  --ink-2: #4a5459; /* secondary — 7.7:1 */
+  --muted: #606c74; /* captions — 5.3:1 on card */
+  --line: #e3ddd1;
+  --line-2: #eee9df;
 
-  --blue-soft: #e9f1fe; /* blue dissolved into the surface */
-  --blue-edge: #c6dafb;
+  /* ── SEMANTIC ROLES ─────────────────────────────────────────────────────
+     Components reference these, never a raw hue. Two payoffs: "make the eye
+     land on the right thing" becomes something the code can enforce, and a
+     later palette change is one file rather than an audit of 1,900 lines. */
+  --focus: var(--teal-600); /* the thing to look at / act on */
+  --focus-text: var(--teal-700);
+  --calm: var(--teal-600); /* Pocko's baseline feeling: safe, unhurried */
+  --recede: var(--muted); /* supporting detail that must not compete */
 
-  /* ── traffic light (muted) ───────────────────────────────────────────── */
-  --go: #1f9d62; /* green — graphic/fill (3:1+ as a mark) */
-  --go-text: #0e7a48; /* darker green for text on light (4.6:1) */
-  --warn: #e0932b; /* amber */
-  --warn-text: #a9670e; /* 4.5:1 */
-  --over: #dc574f; /* red */
-  --over-text: #c13a32; /* 5.4:1 */
+  --good: #3fa34d; /* grass green — graphic marks, 3.2:1 */
+  --good-text: #2e7d3a; /* grass green as text, 5.0:1 */
+  --warn: #ce7514; /* amber — approaching a problem */
+  --warn-text: #9a5b12; /* 5.3:1 */
+  --bad: #e4572e; /* orange-red — genuinely concerning */
+  --bad-text: #c0391b; /* 5.4:1 */
 
-  /* soft tints + edges follow the surface (redefined in dark below) */
-  --go-soft: color-mix(in srgb, var(--go) 15%, var(--surface));
-  --go-edge: color-mix(in srgb, var(--go) 40%, var(--surface));
-  --warn-soft: color-mix(in srgb, var(--warn) 16%, var(--surface));
+  /* ── legacy names, remapped ─────────────────────────────────────────────
+     The blue-era and neon-era class names still run through 1,900 lines of
+     CSS. Rather than an error-prone find-and-replace, the old TOKEN names are
+     kept and pointed at the new palette, so every existing rule rethemes at
+     once. Don't assume a var called --blue is blue. */
+  --blue: var(--teal-600);
+  --blue-strong: var(--teal-700);
+  --navy: var(--charcoal);
+  --brand-ink: var(--teal-700);
+  --on-brand: #ffffff;
+  --blue-soft: #e6efec;
+  --blue-edge: #bcd6d1;
+  --go: var(--good);
+  --go-text: var(--good-text);
+  --over: var(--bad);
+  --over-text: var(--bad-text);
+
+  --go-soft: color-mix(in srgb, var(--good) 15%, var(--surface));
+  --go-edge: color-mix(in srgb, var(--good) 40%, var(--surface));
+  --warn-soft: color-mix(in srgb, var(--warn) 15%, var(--surface));
   --warn-edge: color-mix(in srgb, var(--warn) 42%, var(--surface));
-  --over-soft: color-mix(in srgb, var(--over) 15%, var(--surface));
-  --over-edge: color-mix(in srgb, var(--over) 40%, var(--surface));
+  --over-soft: color-mix(in srgb, var(--bad) 14%, var(--surface));
+  --over-edge: color-mix(in srgb, var(--bad) 40%, var(--surface));
+  --teal-soft: var(--blue-soft);
+  --teal-edge: var(--blue-edge);
 
-  /* semantic aliases the gauge/pills reference by name */
-  --go-fill: var(--go);
+  --go-fill: var(--good);
   --tight-fill: var(--warn);
-  --over-fill: var(--over);
+  --over-fill: var(--bad);
 
-  /* ── the gauge dial (works on a light card; flips in dark) ────────────── */
-  --gauge-face: var(--surface); /* the marker punches a hole back to this */
-  --gauge-track: #e4eaf2;
-  --gauge-tick: color-mix(in srgb, var(--navy) 16%, transparent);
-  --gauge-tick-major: color-mix(in srgb, var(--navy) 34%, transparent);
+  /* ── the gauge ───────────────────────────────────────────────────────── */
+  --gauge-face: var(--surface);
+  --gauge-track: #e5ded2;
+  --gauge-tick: color-mix(in srgb, var(--charcoal) 16%, transparent);
+  --gauge-tick-major: color-mix(in srgb, var(--charcoal) 34%, transparent);
   --gauge-notch: var(--ink-2);
 
-  /* ── type ────────────────────────────────────────────────────────────── */
+  /* ── type ────────────────────────────────────────────────────────────────
+     The floor is 15px: there is no small print left to skim past. The ratio is
+     wide so a page top is genuinely large and the hierarchy reads from across
+     a room — "big important information → supporting → detail underneath". */
   --f-display: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
   --f-body: 'Inter', system-ui, -apple-system, sans-serif;
-  --f-num: 'Plus Jakarta Sans', system-ui, sans-serif; /* big money figures */
-  --f-mono: 'Inter', system-ui, sans-serif; /* ledger figures — aligned via tabular-nums */
+  --f-num: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --f-mono: 'Inter', system-ui, sans-serif;
+
+  --t-summary: clamp(1.5rem, 1.15rem + 1.5vw, 2.125rem); /* the page's first sentence */
+  --t-hero: clamp(2.75rem, 2rem + 3.4vw, 4rem); /* the one big number */
+  --t-h2: 1.375rem;
+  --t-h3: 1.125rem;
+  --t-body: 1rem;
+  --t-support: 0.9375rem; /* 15px — the floor */
 
   --r-sm: 10px;
   --r: 16px;
   --r-lg: 22px;
   --r-pill: 999px;
 
-  /* soft, blue-tinted shadows — calm, not heavy */
-  --shadow: 0 1px 2px color-mix(in srgb, var(--navy) 6%, transparent),
-    0 6px 20px color-mix(in srgb, var(--navy) 6%, transparent);
-  --shadow-lift: 0 2px 4px color-mix(in srgb, var(--navy) 8%, transparent),
-    0 14px 34px color-mix(in srgb, var(--navy) 10%, transparent);
-  --shadow-pop: 0 22px 60px color-mix(in srgb, var(--navy) 22%, transparent);
-  --glow-blue: 0 6px 18px color-mix(in srgb, var(--blue) 28%, transparent);
+  /* Soft, warm shadows. No gradients anywhere — his instruction, verbatim. */
+  --shadow: 0 1px 2px color-mix(in srgb, var(--charcoal) 5%, transparent),
+    0 6px 20px color-mix(in srgb, var(--charcoal) 5%, transparent);
+  --shadow-lift: 0 2px 4px color-mix(in srgb, var(--charcoal) 7%, transparent),
+    0 14px 34px color-mix(in srgb, var(--charcoal) 8%, transparent);
+  --shadow-pop: 0 22px 60px color-mix(in srgb, var(--charcoal) 20%, transparent);
+  --glow-blue: 0 6px 18px color-mix(in srgb, var(--teal-600) 24%, transparent);
 
-  --scrim: color-mix(in srgb, var(--navy) 52%, transparent);
+  --scrim: color-mix(in srgb, var(--charcoal) 52%, transparent);
 
   --nav-w: 244px;
 
   color-scheme: light;
 }
 
-/* ── dark theme — deep navy, de-neoned ─────────────────────────────────── */
+/* ── dark theme — warm charcoal, never black, still Pocko ───────────────── */
 :root[data-theme='dark'] {
-  --bg: #0b1a2e;
-  --surface: #10233b;
-  --surface-2: #17304c;
-  --ink: #eaf2fb;
-  --ink-2: #bccbde;
-  --muted: #8da2ba;
-  --line: #27476390; /* softened with alpha so borders don't ring too hard */
-  --line-2: #1e3a5680;
+  --bg: #1a1e20;
+  --surface: #242a2c;
+  --surface-2: #2d3437;
+  --ink: #f0ece5;
+  --ink-2: #c6cdd0;
+  --muted: #97a1a5;
+  --line: #3a4245a0;
+  --line-2: #2f373a80;
 
-  --brand-ink: #7daeff; /* blue can't be read on navy — a lighter blue takes over */
-  --blue-soft: #16324f;
-  --blue-edge: #2e547f;
+  /* Teal at 4.9:1 on white is unreadable on charcoal; a lighter teal takes over. */
+  --teal-600: #4fa89c;
+  --teal-700: #7cc7bd;
+  --brand-ink: #7cc7bd;
+  --focus-text: #7cc7bd;
+  --blue-soft: #22403c;
+  --blue-edge: #38635c;
 
-  --go: #34c285;
-  --go-text: #46d191;
-  --warn: #e2ad57;
-  --warn-text: #ecbb6a;
-  --over: #ec7169;
-  --over-text: #f28c84;
+  --good: #56c169;
+  --good-text: #74d183;
+  --warn: #e0932b;
+  --warn-text: #eeb05a;
+  --bad: #ef7a55;
+  --bad-text: #f59578;
 
-  --go-soft: color-mix(in srgb, var(--go) 18%, var(--surface));
-  --go-edge: color-mix(in srgb, var(--go) 42%, var(--surface));
-  --warn-soft: color-mix(in srgb, var(--warn) 18%, var(--surface));
-  --warn-edge: color-mix(in srgb, var(--warn) 44%, var(--surface));
-  --over-soft: color-mix(in srgb, var(--over) 18%, var(--surface));
-  --over-edge: color-mix(in srgb, var(--over) 44%, var(--surface));
-
-  --gauge-track: #24405e;
+  --gauge-track: #39413f;
   --gauge-tick: color-mix(in srgb, #fff 12%, transparent);
   --gauge-tick-major: color-mix(in srgb, #fff 30%, transparent);
   --gauge-notch: var(--ink);
@@ -508,6 +544,10 @@ input[type='number'] {
 
 /* ── buttons + pills ───────────────────────────────────────────────────── */
 .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   border: 1px solid var(--line);
   background: var(--surface);
   color: var(--ink);
@@ -1450,26 +1490,9 @@ input[type='number'] {
   }
 }
 
-/* ── can I spend ───────────────────────────────────────────────────────── */
-.cis-input {
-  font-family: var(--f-num);
-  font-weight: 800;
-  font-size: 46px;
-  text-align: center;
-  border: none;
-  border-bottom: 2px solid var(--line);
-  border-radius: 0;
-  width: 100%;
-  padding: 8px 0;
-  background: transparent;
-  color: var(--ink);
-  transition: border-color 0.15s;
-  font-variant-numeric: tabular-nums;
-}
-.cis-input:focus {
-  outline: none;
-  border-color: var(--blue);
-}
+/* ── can I spend: the old sheet-era input rules were replaced by the inline
+   slab further down this file. .verdict is still used by nothing but is left
+   for the animation keyframes it references. ── */
 .verdict {
   text-align: center;
   padding: 22px;
@@ -1875,4 +1898,340 @@ input[type='number'] {
 }
 .cal-term-chip.term-term {
   border-color: var(--muted);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   THE PAGE CONTRACT
+   Summary first, evidence second. The type scale does the hierarchy: the
+   summary is the largest thing on the page, the hero is the one big number,
+   and everything after it recedes. See src/components/Page.jsx.
+   ───────────────────────────────────────────────────────────────────────── */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  max-width: 940px;
+}
+
+.page-title {
+  font-size: var(--t-h2);
+  color: var(--muted);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-transform: none;
+  margin: 0;
+}
+
+/* The first thing anyone reads. Deliberately the largest type on the page —
+   larger than the headings under it — so the answer outranks the evidence. */
+.page-summary {
+  border-left: 3px solid var(--line);
+  padding: 2px 0 2px 18px;
+}
+.page-summary.is-good { border-left-color: var(--good); }
+.page-summary.is-warn { border-left-color: var(--warn); }
+.page-summary.is-bad { border-left-color: var(--bad); }
+.page-summary.is-neutral { border-left-color: var(--teal-edge); }
+
+.page-summary-headline {
+  font-family: var(--f-display);
+  font-size: var(--t-summary);
+  line-height: 1.22;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0;
+  text-wrap: balance;
+}
+
+.page-summary-lines {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.page-summary-lines p {
+  margin: 0;
+  font-size: var(--t-body);
+  line-height: 1.5;
+  color: var(--ink-2);
+  max-width: 62ch;
+}
+
+.page-hero { display: flex; flex-direction: column; gap: 18px; }
+
+/* Advanced tools and tips live at the bottom and look like it. */
+.page-tools {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 6px;
+  padding-top: 22px;
+  border-top: 1px solid var(--line-2);
+}
+.page-tools h2, .page-tools h3 { color: var(--ink-2); }
+
+/* Section headings under the summary — quieter than the summary, by design. */
+.sec-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.sec-head h2 {
+  font-size: var(--t-h3);
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+.sec-head .sec-note { font-size: var(--t-support); color: var(--recede); }
+
+/* ─────────────────────────────────────────────────────────────────────────
+   CAN I SPEND — a full-width slab on Overview, not a card buried in analytics.
+   "The whole purpose of Pocko is essentially: I've checked my finances. Am I
+    actually okay to spend some money?"
+   ───────────────────────────────────────────────────────────────────────── */
+
+.cis {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow);
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.cis-head h2 {
+  font-size: var(--t-h2);
+  margin: 0 0 4px;
+}
+.cis-room {
+  margin: 0;
+  font-size: var(--t-body);
+  color: var(--ink-2);
+}
+.cis-room b { color: var(--focus-text); }
+
+.cis-entry {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.cis-input-wrap {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 2px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 6px 16px 8px;
+}
+.cis-input-wrap:focus-within {
+  border-color: var(--focus);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus) 20%, transparent);
+}
+.cis-currency {
+  font-family: var(--f-num);
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+.cis-input {
+  font-family: var(--f-num);
+  font-size: 2.25rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+  background: transparent;
+  border: 0;
+  outline: none;
+  width: 4.5ch;
+  padding: 0;
+}
+.cis-input::-webkit-outer-spin-button,
+.cis-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.cis-input[type='number'] { -moz-appearance: textfield; }
+
+.cis-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.cis-chips .chip {
+  font: inherit;
+  font-size: var(--t-support);
+  font-weight: 600;
+  color: var(--ink-2);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  padding: 8px 14px;
+  cursor: pointer;
+}
+.cis-chips .chip:hover { border-color: var(--focus); color: var(--focus-text); }
+
+/* The answer. One restrained accent edge — the verdict is carried by the words,
+   with colour confirming it rather than doing the talking. */
+.cis-answer {
+  border-radius: var(--r);
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-left-width: 4px;
+  background: var(--surface-2);
+}
+.cis-answer.tone-good { border-left-color: var(--good); }
+.cis-answer.tone-warn { border-left-color: var(--warn); }
+.cis-answer.tone-bad { border-left-color: var(--bad); }
+
+.cis-verdict {
+  font-family: var(--f-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0 0 4px;
+  color: var(--ink);
+}
+.cis-detail { margin: 0; font-size: var(--t-body); color: var(--ink-2); }
+.cis-log { margin-top: 14px; }
+
+/* ── Overview supporting bits ─────────────────────────────────────────── */
+
+.pace-working {
+  margin: 14px 0 0;
+  padding-top: 14px;
+  border-top: 1px solid var(--line-2);
+  font-size: var(--t-support);
+  color: var(--ink-2);
+  line-height: 1.55;
+}
+.pace-working b { color: var(--ink); font-weight: 700; }
+
+.linkish {
+  font: inherit;
+  color: var(--focus-text);
+  background: none;
+  border: 0;
+  padding: 0;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.empty-row {
+  padding: 18px;
+  color: var(--recede);
+  font-size: var(--t-support);
+}
+
+.row-total {
+  border-top: 2px solid var(--line);
+  font-weight: 700;
+}
+.row-total .amt.accent { color: var(--focus-text); }
+
+/* A bill landing just after payday: shown, but visibly not part of the sum above. */
+.row.is-after { opacity: 0.72; }
+.row.is-after .amt { color: var(--recede); }
+
+.tool-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 4px; }
+
+/* ─────────────────────────────────────────────────────────────────────────
+   SAVING — goals and the pace bar.
+   "Saving is a goal, not the absence of spending." The bar shows everything in
+   the pot; the pace shows only money that actually moved.
+   ───────────────────────────────────────────────────────────────────────── */
+
+.goal-card { display: flex; flex-direction: column; gap: 12px; }
+.goal-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.goal-head h3 { display: flex; align-items: center; gap: 8px; font-size: var(--t-h3); }
+.goal-done { padding: 2px 8px; }
+.g-target { font-family: var(--f-num); font-weight: 700; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+
+/* Where the money in the bar came from — named, never blended into the pace. */
+.goal-origin {
+  margin: 0;
+  font-size: var(--t-support);
+  color: var(--recede);
+}
+
+.goal-pace {
+  border-top: 1px solid var(--line-2);
+  padding-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.goal-pace-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.goal-working { margin: 0; font-size: var(--t-support); color: var(--ink-2); line-height: 1.5; }
+.goal-working b { color: var(--ink); }
+.goal-streak { margin: 0; font-size: var(--t-support); font-weight: 600; color: var(--good-text); }
+
+.goal-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: var(--t-support);
+  color: var(--ink-2);
+}
+.goal-actions { display: flex; gap: 6px; align-items: center; }
+
+/* ── the saving pace bar ─────────────────────────────────────────────── */
+.spb { display: flex; flex-direction: column; gap: 5px; }
+.spb-track {
+  position: relative;
+  height: 12px;
+  border-radius: var(--r-pill);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  overflow: hidden;
+}
+.spb-fill {
+  display: block;
+  height: 100%;
+  border-radius: var(--r-pill);
+  background: var(--muted);
+  transition: width 600ms cubic-bezier(0.2, 0.85, 0.25, 1);
+}
+.spb.is-good .spb-fill { background: var(--good); }
+.spb.is-warn .spb-fill { background: var(--warn); }
+.spb.is-bad .spb-fill { background: var(--bad); }
+.spb.is-unknown .spb-fill { background: var(--line); }
+
+/* The 1.00 line: the whole point of a ratio is what it is a ratio OF. */
+.spb-mark {
+  position: absolute;
+  top: -1px;
+  bottom: -1px;
+  width: 2px;
+  background: var(--gauge-notch);
+  transform: translateX(-1px);
+}
+.spb-scale {
+  position: relative;
+  height: 14px;
+  font-size: 12px;
+  color: var(--recede);
+}
+.spb-scale-mark { position: absolute; transform: translateX(-50%); white-space: nowrap; }
+
+.tips p { margin: 0 0 10px; font-size: var(--t-support); color: var(--ink-2); line-height: 1.55; }
+.tips p:last-child { margin-bottom: 0; }
+
+.saving-hero { display: flex; flex-direction: column; gap: 14px; }
+.saving-ratio {
+  font-family: var(--f-num);
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+/* A verdict-free pill: used when the app genuinely does not know yet. It must not
+   borrow green's reassurance or red's alarm — "I have no data" is its own state. */
+.pill.neutral {
+  background: var(--surface-2);
+  border-color: var(--line);
+  color: var(--muted);
 }

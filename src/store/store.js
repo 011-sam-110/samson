@@ -1,9 +1,12 @@
 import { createContext, useContext, useEffect, useMemo, useState, createElement } from 'react'
 import { defaultState } from './seed.js'
-import { migrate } from './migrate.js'
+import { migrate, CURRENT_VERSION } from './migrate.js'
 import { uid } from '../lib/id.js'
 import { computeDashboard } from '../engine/finance.js'
 
+// Deliberately still 'leeway' after the rename to Pocko: this is where every
+// existing user's data physically lives. Renaming the key would silently reset
+// the app for everyone who already has it open.
 const KEY = 'leeway:v1'
 
 function load() {
@@ -73,18 +76,39 @@ export function StoreProvider({ children }) {
         }
       },
 
+      // `saved` on the form is "already put aside before Pocko" — an opening balance.
+      // It counts toward the goal bar but never toward saving pace.
       addGoal: ({ label, target, deadline, saved }) =>
-        push('goals', { label, target: Number(target) || 0, deadline, saved: Number(saved) || 0 }),
+        push('goals', { label, target: Number(target) || 0, deadline, openingBalance: Number(saved) || 0 }),
 
-      // Moving money into a goal pot: it leaves spendable balance and lifts progress.
-      contributeToGoal: (id, amount) => {
+      // Moving money into a goal pot: it leaves spendable balance and lands as a DATED
+      // row in the ledger. The date is the whole point — saving pace is "how much went
+      // in over how many days", which a running total could never answer.
+      contributeToGoal: (goalId, amount, date) => {
         const amt = Number(amount) || 0
+        if (amt <= 0) return
         setState((s) => ({
           ...s,
           balance: (Number(s.balance) || 0) - amt,
-          goals: s.goals.map((g) => (g.id === id ? { ...g, saved: (Number(g.saved) || 0) + amt } : g)),
+          contributions: [
+            { id: uid(), goalId, amount: amt, date: date || todayISO() },
+            ...(s.contributions || []),
+          ],
         }))
       },
+
+      // Undo a contribution: the money comes back to spendable, and the day it was
+      // logged stops counting toward the pace.
+      removeContribution: (id) =>
+        setState((s) => {
+          const row = (s.contributions || []).find((c) => c.id === id)
+          if (!row) return s
+          return {
+            ...s,
+            balance: (Number(s.balance) || 0) + (Number(row.amount) || 0),
+            contributions: (s.contributions || []).filter((c) => c.id !== id),
+          }
+        }),
 
       addEvent: ({ label, amount, date }) => push('events', { label, amount: Number(amount) || 0, date }),
 
@@ -115,7 +139,14 @@ export function StoreProvider({ children }) {
       removeTransaction: (id) => remove('transactions', id),
       removeBill: (id) => remove('bills', id),
       removeIncome: (id) => remove('incomeSources', id),
-      removeGoal: (id) => remove('goals', id),
+      // Deleting a goal takes its ledger rows with it — orphaned contributions would
+      // keep counting toward the overall saving pace for a goal that no longer exists.
+      removeGoal: (id) =>
+        setState((s) => ({
+          ...s,
+          goals: (s.goals || []).filter((g) => g.id !== id),
+          contributions: (s.contributions || []).filter((c) => c.goalId !== id),
+        })),
       removeEvent: (id) => remove('events', id),
       removeTermSpan: (id) => remove('termSpans', id),
 
@@ -123,12 +154,13 @@ export function StoreProvider({ children }) {
       resetDemo: () => setState(defaultState()),
       clearAll: () =>
         setState({
-          version: 3,
+          version: CURRENT_VERSION,
           balance: 0,
           lastReconciled: todayISO(),
           incomeSources: [],
           bills: [],
           goals: [],
+          contributions: [],
           events: [],
           termSpans: [],
           transactions: [],

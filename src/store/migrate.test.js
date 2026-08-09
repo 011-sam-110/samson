@@ -45,7 +45,6 @@ describe('migrate', () => {
   it('v2 → v3 adds an empty termSpans array', () => {
     const v2 = { version: 2, balance: 0, transactions: [], bills: [], goals: [], events: [], incomeSources: [] }
     const out = migrate(v2)
-    expect(out.version).toBe(3)
     expect(out.termSpans).toEqual([])
   })
 
@@ -58,5 +57,53 @@ describe('migrate', () => {
   it('does not throw on non-object input', () => {
     expect(migrate(null)).toBe(null)
     expect(migrate(undefined)).toBe(undefined)
+  })
+
+  // v4 — the dated contribution ledger. Saving pace cannot exist without it: the old
+  // model kept one running `saved` total per goal, so "saved in the last N days" had
+  // no answer. Money already put aside before Pocko is real progress but was never
+  // saved during a window we measured, so it becomes an opening balance and is kept
+  // out of the pace entirely.
+  describe('v3 → v4 (dated contribution ledger)', () => {
+    const v3 = {
+      version: 3,
+      balance: 0,
+      transactions: [],
+      bills: [],
+      events: [],
+      incomeSources: [],
+      termSpans: [],
+      goals: [{ id: 'g1', label: 'Holiday', target: 300, saved: 180, deadline: '2026-09-01' }],
+    }
+
+    it('adds an empty contributions collection', () => {
+      expect(migrate(v3).contributions).toEqual([])
+    })
+
+    it('turns an existing saved total into an opening balance', () => {
+      const [goal] = migrate(v3).goals
+      expect(goal.openingBalance).toBe(180)
+    })
+
+    it('drops the old saved field so nothing double-counts it', () => {
+      const [goal] = migrate(v3).goals
+      expect(goal.saved).toBeUndefined()
+    })
+
+    it('leaves every other goal field untouched', () => {
+      const [goal] = migrate(v3).goals
+      expect(goal).toMatchObject({ id: 'g1', label: 'Holiday', target: 300, deadline: '2026-09-01' })
+    })
+
+    it('defaults a goal with no saved total to a zero opening balance', () => {
+      const out = migrate({ ...v3, goals: [{ id: 'g2', label: 'Laptop', target: 500, deadline: '2026-12-01' }] })
+      expect(out.goals[0].openingBalance).toBe(0)
+    })
+
+    it('keeps contributions that already exist', () => {
+      const c = { id: 'c1', goalId: 'g1', amount: 20, date: '2026-08-01' }
+      const out = migrate({ ...v3, version: 4, contributions: [c] })
+      expect(out.contributions).toEqual([c])
+    })
   })
 })

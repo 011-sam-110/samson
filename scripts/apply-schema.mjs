@@ -35,7 +35,7 @@ const ssl = /neon\.tech|sslmode=require/.test(url) ? { rejectUnauthorized: false
 const { Pool } = pg
 const db = new Pool({ connectionString: url, ssl })
 const here = dirname(fileURLToPath(import.meta.url))
-const EXPECT = ['users', 'profiles', 'transactions', 'bills', 'income_sources', 'goals', 'events', 'term_spans', 'usage_events']
+const EXPECT = ['users', 'profiles', 'transactions', 'bills', 'income_sources', 'goals', 'goal_contributions', 'events', 'term_spans', 'usage_events']
 
 async function main() {
   await db.query('select 1')

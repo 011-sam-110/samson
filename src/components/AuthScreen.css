@@ -1,14 +1,19 @@
 /* AuthScreen — self-contained so it never fights the app's global theme.
-   Client palette: white surfaces, calm blue, deep navy. Bright, not neon. */
+   Pocko palette: warm off-white surfaces, soft teal, charcoal ink.
+
+   These are local copies rather than references to index.css, because this screen
+   renders before the app shell mounts and must not depend on it. That independence
+   is also why it was still blue after the rebrand — worth remembering next time the
+   palette moves. */
 .auth-screen {
-  --navy: #0f2a4a;
-  --blue: #2563eb;
-  --blue-dark: #1d4ed8;
-  --ink: #0f2a4a;
-  --muted: #5b6b7f;
-  --line: #e4eaf1;
-  --bg-1: #eef4fc;
-  --bg-2: #f8fbff;
+  --navy: #22282b;
+  --blue: #2f7d74;
+  --blue-dark: #1f5c56;
+  --ink: #22282b;
+  --muted: #606c74;
+  --line: #e3ddd1;
+  --bg-1: #f0ebe1;
+  --bg-2: #f6f3ed;
   min-height: 100vh;
   min-height: 100dvh;
   display: flex;
@@ -23,11 +28,11 @@
 .auth-card {
   width: 100%;
   max-width: 420px;
-  background: #fff;
+  background: #fffdfa;
   border: 1px solid var(--line);
   border-radius: 20px;
   padding: 32px 28px;
-  box-shadow: 0 18px 50px -20px rgba(15, 42, 74, 0.28);
+  box-shadow: 0 18px 50px -20px rgba(34, 40, 43, 0.22);
 }
 
 .auth-brand {
@@ -66,7 +71,7 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 4px;
-  background: #f1f5fb;
+  background: #f0ebe1;
   border-radius: 12px;
   padding: 4px;
   margin-bottom: 20px;
@@ -84,9 +89,9 @@
   transition: background 0.15s, color 0.15s;
 }
 .auth-tab.is-active {
-  background: #fff;
+  background: #fffdfa;
   color: var(--navy);
-  box-shadow: 0 1px 3px rgba(15, 42, 74, 0.12);
+  box-shadow: 0 1px 3px rgba(34, 40, 43, 0.1);
 }
 
 .auth-form {
@@ -112,23 +117,23 @@
   padding: 12px 14px;
   border: 1px solid var(--line);
   border-radius: 11px;
-  background: #fbfdff;
+  background: #fffdfa;
   color: var(--ink);
   transition: border-color 0.15s, box-shadow 0.15s;
 }
 .auth-field input:focus {
   outline: none;
   border-color: var(--blue);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+  box-shadow: 0 0 0 3px rgba(47, 125, 116, 0.2);
 }
 
 .auth-error {
   margin: 2px 0 0;
   font-size: 13px;
   font-weight: 500;
-  color: #b42318;
-  background: #fef3f2;
-  border: 1px solid #fecdc9;
+  color: #c0391b;
+  background: #fdeee9;
+  border: 1px solid #f5c9b9;
   padding: 9px 12px;
   border-radius: 10px;
 }
@@ -191,7 +196,7 @@
 .auth-guest {
   width: 100%;
   border: 1px solid var(--line);
-  background: #f8fbff;
+  background: #fffdfa;
   color: var(--navy);
   font-size: 14px;
   font-weight: 600;
@@ -199,7 +204,7 @@
   border-radius: 12px;
   transition: background 0.15s, border-color 0.15s;
 }
-.auth-guest:hover { background: #eef4fc; border-color: #cfdcec; }
+.auth-guest:hover { background: #f0ebe1; border-color: #bcd6d1; }
 
 .auth-note {
   margin: 12px 2px 0;
@@ -211,17 +216,19 @@
 
 @media (prefers-color-scheme: dark) {
   .auth-screen {
-    --ink: #e8eef6;
-    --navy: #eaf1fb;
-    --muted: #9fb0c4;
-    --line: #24344a;
-    --bg-1: #0c1a2e;
-    --bg-2: #0a1420;
+    --ink: #f0ece5;
+    --navy: #f0ece5;
+    --muted: #97a1a5;
+    --line: #3a4245;
+    --bg-1: #1a1e20;
+    --bg-2: #16191b;
+    --blue: #4fa89c;
+    --blue-dark: #7cc7bd;
   }
-  .auth-card { background: #10243d; }
-  .auth-tabs { background: #0d1f34; }
-  .auth-tab.is-active { background: #16324f; }
-  .auth-field input { background: #0d1f34; }
-  .auth-guest { background: #0d1f34; }
-  .auth-guest:hover { background: #12283f; }
+  .auth-card { background: #242a2c; }
+  .auth-tabs { background: #2d3437; }
+  .auth-tab.is-active { background: #22403c; }
+  .auth-field input { background: #2d3437; }
+  .auth-guest { background: #2d3437; }
+  .auth-guest:hover { background: #353d40; }
 }

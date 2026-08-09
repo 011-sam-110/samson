@@ -1,13 +1,13 @@
 // Theme: follow the OS by default, and remember an explicit choice for ever.
 //
 // Three states, not two — "system" is a real setting, not the absence of one.
-// Someone whose phone goes dark at sunset should see Leeway go dark at sunset,
+// Someone whose phone goes dark at sunset should see Pocko go dark at sunset,
 // until the moment they say otherwise. So we only ever write to storage when
 // the user actually picks, and a stored value always wins.
 
 import { useCallback, useEffect, useState } from 'react'
 
-const KEY = 'leeway:theme' // kept out of the finance state: it's a device
+const KEY = 'leeway:theme' // pre-rename key, kept so nobody's theme flips back // kept out of the finance state: it's a device
 // preference, not data, and it must not travel in an export/import backup
 
 const DARK_Q = '(prefers-color-scheme: dark)'

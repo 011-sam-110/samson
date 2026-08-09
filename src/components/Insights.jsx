@@ -12,7 +12,11 @@ import {
   dailySpendSeries,
   weeklySeries,
 } from '../engine/analytics.js'
-import { goalProgress, survivalPlan } from '../engine/finance.js'
+import { survivalPlan, goalProgress } from '../engine/finance.js'
+import { overallSavingPace, savingStreak } from '../engine/saving.js'
+import { analyticsSummary } from '../engine/summaries.js'
+import { Page, PageSummary, Section } from './Page.jsx'
+import SavingPaceBar from './SavingPaceBar.jsx'
 import { gbp, gbpWhole, pct, shortDate } from '../lib/format.js'
 import { BarRow, SplitBar } from './charts.jsx'
 import { SpendOverTimeChart, WeeklyTrendChart } from './InsightCharts.jsx'
@@ -49,7 +53,7 @@ export default function Insights() {
   // Top discretionary category → cost against the nearest goal still being saved into.
   const topDiscretionary = cats.find((c) => c.type === 'discretionary')
   const topGoal = (state.goals || [])
-    .map((g) => ({ g, p: goalProgress(g, asOf) }))
+    .map((g) => ({ g, p: goalProgress(g, asOf, state.contributions) }))
     .filter((x) => !x.p.done && !x.p.overdue && x.p.weeklyRequired > 0)
     .sort((a, b) => a.p.daysLeft - b.p.daysLeft)[0]
   const goalWeeks = topGoal && topDiscretionary ? costToGoal(topDiscretionary.total, topGoal.p.weeklyRequired) : 0
@@ -118,14 +122,49 @@ export default function Insights() {
     }
   }
 
-  return (
-    <div>
-      <div className="page-head">
-        <div className="eyebrow">Insights</div>
-        <h1>A report on your money</h1>
-        <p>The story behind your spending — where it goes, how this week compares, and the easiest things to trim.</p>
-      </div>
+  const summary = analyticsSummary(state, asOf)
+  const saving = overallSavingPace(state.goals || [], state.contributions, asOf)
+  // The streak belongs to the goal with the nearest deadline — the one whose pace
+  // the student is actually being asked to keep.
+  const streakGoal = [...(state.goals || [])]
+    .filter((g) => g.deadline)
+    .sort((a, b) => new Date(a.deadline) - new Date(b.deadline))[0]
+  const streak = streakGoal ? savingStreak(streakGoal, state.contributions, asOf) : { current: 0, best: 0 }
 
+  return (
+    <Page title="Analytics">
+      <Section slot="summary">
+        <PageSummary summary={summary} />
+      </Section>
+
+      {/* Hero: the savings indicator. The client asked for it at the top of this
+          page — saving is a goal, not a footnote under the spending charts. */}
+      <Section slot="hero">
+        <div className="panel saving-hero">
+          <div className="panel-top">
+            <span className="label">Saving pace</span>
+            {saving.dataQuality === 'ok' && (
+              <span className="saving-ratio">{saving.ratio.toFixed(2)}×</span>
+            )}
+          </div>
+          <SavingPaceBar pace={saving} />
+          <p className="goal-working">
+            {saving.dataQuality === 'insufficient' ? (
+              <>Your goals need <b>{gbp(saving.requiredDaily)}</b> a day between them. Nothing has been transferred yet.</>
+            ) : (
+              <>
+                You're putting aside <b>{gbp(saving.actualDaily)}</b> a day; your goals need{' '}
+                <b>{gbp(saving.requiredDaily)}</b> a day.
+              </>
+            )}
+          </p>
+          {streak.current >= 2 && (
+            <p className="goal-streak">🔥 {streak.current} days at or above the pace your goals need.</p>
+          )}
+        </div>
+      </Section>
+
+      <Section slot="detail">
       <div className="insights-top">
         <div className="seg-inline">
           {PERIODS.map((p) => (
@@ -259,7 +298,7 @@ export default function Insights() {
               <div className="row" style={{ alignItems: 'center' }}>
                 <div className="meta">
                   <div className="t" style={{ fontWeight: 700 }}>Want a hand?</div>
-                  <div className="s">Leeway can look at your spending and suggest one thing to cut.</div>
+                  <div className="s">Pocko can look at your spending and suggest one thing to cut.</div>
                 </div>
                 <button className="btn btn-primary btn-sm" onClick={getTip} disabled={tipState === 'loading'}>
                   {tipState === 'loading' ? 'Thinking…' : 'Get a tip'}
@@ -273,6 +312,9 @@ export default function Insights() {
         </>
       )}
 
+      </Section>
+
+      <Section slot="tools">
       {/* ── Ways to save — friendly evergreen tips, always available ── */}
       <div className="section-title">Ways to save</div>
       <div className="tip-list">
@@ -294,7 +336,7 @@ export default function Insights() {
         <div className="section-title" style={{ margin: 0, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
           Make a lump last
           <Explain label="make a lump last">
-            Got a loan or grant that has to see you through the term? Tell Leeway the date it needs to last to, and it spreads your
+            Got a loan or grant that has to see you through the term? Tell Pocko the date it needs to last to, and it spreads your
             balance evenly across every day until then — with a little extra for weekends.
           </Explain>
         </div>
@@ -354,11 +396,13 @@ export default function Insights() {
         </div>
       )}
 
+      </Section>
+
       {surviveOpen && (
         <Sheet title="Make a lump last" onClose={() => setSurviveOpen(false)}>
           <SurviveForm onDone={() => setSurviveOpen(false)} />
         </Sheet>
       )}
-    </div>
+    </Page>
   )
 }

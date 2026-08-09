@@ -1,4 +1,4 @@
-// Leeway spending-calendar engine — pure functions over the ledger + term spans.
+// Pocko spending-calendar engine — pure functions over the ledger + term spans.
 // No React, no storage. Reuses finance.js date helpers so day maths stays
 // consistent with the dashboard's run-rate (discretionary = non-fixed spend).
 import { toDate, addDays, addMonths, daysBetween } from './finance.js'

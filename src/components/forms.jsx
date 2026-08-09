@@ -275,7 +275,7 @@ export function SurviveForm({ onDone }) {
   return (
     <form onSubmit={submit}>
       <p style={{ marginTop: 0, color: 'var(--muted)', fontSize: 14 }}>
-        Got a loan or grant that has to see you through the term? Tell Leeway the date it needs to last to, and it'll spread your
+        Got a loan or grant that has to see you through the term? Tell Pocko the date it needs to last to, and it'll spread your
         current balance evenly across every day until then.
       </p>
       <Field label="Make it last until">

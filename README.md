@@ -1,11 +1,11 @@
-# Leeway
+# Pocko
 
 **One trusted number that tells a UK student what they can safely spend today.**
 
 Live: **https://samson-three.vercel.app**
 
 Existing budgeting apps are rear-view mirrors - they show transactions and charts, then leave you
-to do the mental maths. Leeway is a windscreen: it answers the only question a student actually asks
+to do the mental maths. Pocko is a windscreen: it answers the only question a student actually asks
 at the till - *"can I afford this right now?"* - and keeps that answer honest as life happens (a
 night out, an extra shift, rent looming).
 
@@ -17,7 +17,7 @@ The **Overview** screen leads with your **total balance**, then a **spend speedo
 own "£/day like mph" metaphor):
 
 - **Total balance** - what's actually in your account, first thing you see.
-- **Safe to spend today £X** - of your current cash, Leeway holds back what bills, goals and planned
+- **Safe to spend today £X** - of your current cash, Pocko holds back what bills, goals and planned
   events will need before your next income, then spreads the rest over the days until that income lands.
 - **The gauge** - your *current* daily spend measured against your *sustainable* daily rate.
   Green = under, amber = a touch over, red = spending fast.
@@ -64,7 +64,7 @@ the rows for you to review and import.
 
 ## Accounts
 
-Leeway has its **own** credential auth - no third-party identity provider.
+Pocko has its **own** credential auth - no third-party identity provider.
 
 - **Passwords** are hashed with **scrypt** (memory-hard) using a **random per-password salt**, and
   verified in constant time. The stored value is self-describing (`scrypt$N$r$p$salt$hash`) so the

@@ -20,13 +20,13 @@ describe('backup', () => {
     expect(() => parseBackup('{not json')).toThrow(/valid JSON/)
   })
 
-  it('throws when required Leeway keys are missing', () => {
-    expect(() => parseBackup(JSON.stringify({ balance: 1 }))).toThrow(/Leeway backup/)
+  it('throws when required Pocko keys are missing', () => {
+    expect(() => parseBackup(JSON.stringify({ balance: 1 }))).toThrow(/Pocko backup/)
   })
 
   it('rejects arrays and primitives', () => {
-    expect(() => parseBackup('[]')).toThrow(/Leeway backup/)
-    expect(() => parseBackup('42')).toThrow(/Leeway backup/)
+    expect(() => parseBackup('[]')).toThrow(/Pocko backup/)
+    expect(() => parseBackup('42')).toThrow(/Pocko backup/)
   })
 
   // Regression: validation used to be a presence check (`k in obj`), so a file
@@ -35,14 +35,14 @@ describe('backup', () => {
   // handler's catch, taking the app down with a blank screen. An imported file is
   // untrusted; reject it here, where the error can still be a sentence.
   it('rejects a file that names the keys but holds the wrong shapes', () => {
-    expect(() => parseBackup(JSON.stringify({ ...good, transactions: {} }))).toThrow(/Leeway backup/)
-    expect(() => parseBackup(JSON.stringify({ ...good, goals: 'none' }))).toThrow(/Leeway backup/)
-    expect(() => parseBackup(JSON.stringify({ ...good, bills: null }))).toThrow(/Leeway backup/)
+    expect(() => parseBackup(JSON.stringify({ ...good, transactions: {} }))).toThrow(/Pocko backup/)
+    expect(() => parseBackup(JSON.stringify({ ...good, goals: 'none' }))).toThrow(/Pocko backup/)
+    expect(() => parseBackup(JSON.stringify({ ...good, bills: null }))).toThrow(/Pocko backup/)
   })
 
   it('rejects a balance that is not a real number', () => {
-    expect(() => parseBackup(JSON.stringify({ ...good, balance: '100' }))).toThrow(/Leeway backup/)
-    expect(() => parseBackup(JSON.stringify({ ...good, balance: null }))).toThrow(/Leeway backup/)
+    expect(() => parseBackup(JSON.stringify({ ...good, balance: '100' }))).toThrow(/Pocko backup/)
+    expect(() => parseBackup(JSON.stringify({ ...good, balance: null }))).toThrow(/Pocko backup/)
   })
 
   // termSpans (M5) is an optional collection: present exports must be an array,
@@ -58,10 +58,10 @@ describe('backup', () => {
   })
 
   it('rejects a backup whose termSpans is present but not an array', () => {
-    expect(() => parseBackup(JSON.stringify({ ...good, termSpans: {} }))).toThrow(/Leeway backup/)
+    expect(() => parseBackup(JSON.stringify({ ...good, termSpans: {} }))).toThrow(/Pocko backup/)
   })
 
   it('builds a dated filename', () => {
-    expect(backupFilename(new Date(2026, 6, 12))).toBe('leeway-backup-2026-07-12.json')
+    expect(backupFilename(new Date(2026, 6, 12))).toBe('pocko-backup-2026-07-12.json')
   })
 })
