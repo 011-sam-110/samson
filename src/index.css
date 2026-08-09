@@ -2227,3 +2227,11 @@ input[type='number'] {
   color: var(--ink);
   font-variant-numeric: tabular-nums;
 }
+
+/* A verdict-free pill: used when the app genuinely does not know yet. It must not
+   borrow green's reassurance or red's alarm — "I have no data" is its own state. */
+.pill.neutral {
+  background: var(--surface-2);
+  border-color: var(--line);
+  color: var(--muted);
+}

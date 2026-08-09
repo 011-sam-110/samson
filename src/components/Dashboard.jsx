@@ -66,7 +66,7 @@ export default function Dashboard() {
                 you're spending slower than you can afford, over it you're spending faster.
               </Explain>
             </span>
-            <span className={`pill ${BAND_PILL[pace.band]}`}>{BAND_LABEL[pace.band]}</span>
+            <span className={`pill ${BAND_PILL[pace.band] || 'neutral'}`}>{BAND_LABEL[pace.band]}</span>
           </div>
 
           <div className="gauge-wrap">
@@ -91,8 +91,10 @@ export default function Dashboard() {
           )}
           {pace.dataQuality === 'insufficient' && !pace.overcommitted && (
             <p className="pace-working">
-              Only {pace.loggedDays} of the last 7 days have any spending logged, so there isn't enough yet to give
-              you a pace.{' '}
+              {pace.loggedDays === 0
+                ? 'None of the last 7 days have any spending logged'
+                : `Only ${pace.loggedDays} of the last 7 days have spending logged`}
+              , so there isn't enough yet to give you a pace.{' '}
               <button type="button" className="linkish" onClick={() => setSheet('expense')}>
                 Log a spend
               </button>{' '}

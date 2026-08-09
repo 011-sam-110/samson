@@ -107,7 +107,7 @@ export default function Goals() {
                           usual is good, but it isn't saving until the money moves.
                         </Explain>
                       </span>
-                      <span className={`pill ${BAND_PILL[p.band]}`}>{BAND_LABEL[p.band]}</span>
+                      <span className={`pill ${BAND_PILL[p.band] || 'neutral'}`}>{BAND_LABEL[p.band]}</span>
                     </div>
 
                     <SavingPaceBar pace={p} />

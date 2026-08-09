@@ -14,7 +14,7 @@ const ITEMS = [
   { key: 'money', label: 'Transactions', Icon: IconLedger },
   { key: 'calendar', label: 'Calendar', Icon: IconCalendar },
   { key: 'insights', label: 'Analytics', Icon: IconInsights },
-  { key: 'goals', label: 'Saving goals', Icon: IconGoals },
+  { key: 'goals', label: 'Goals', Icon: IconGoals },
 ]
 
 // The dial, in miniature. Every stroke is a theme token, so the mark flips with

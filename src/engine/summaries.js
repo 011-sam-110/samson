@@ -25,13 +25,20 @@ const money = (n) => {
 }
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`
 
+const onThe = (date) => toDate(date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' })
+
 // "in 3 days" / "tomorrow" / "today" — dates read as distance, not as calendar entries.
+//
+// Past dates get named outright. This used to collapse everything with d <= 0 to
+// "today", which is fine for a bill due now and wrong for the start of the period:
+// it printed "You have spent £160 since today."
 function when(date, asOf) {
   const d = daysBetween(asOf, date)
-  if (d <= 0) return 'today'
+  if (d < 0) return onThe(date)
+  if (d === 0) return 'today'
   if (d === 1) return 'tomorrow'
   if (d <= 14) return `in ${plural(d, 'day', 'days')}`
-  return toDate(date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' })
+  return onThe(date)
 }
 
 const BAND_TONE = {

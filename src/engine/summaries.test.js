@@ -95,6 +95,18 @@ describe('overviewSummary', () => {
 })
 
 describe('transactionsSummary', () => {
+  // The period runs from the LAST payday, which is in the past. The date helper only
+  // knew how to describe future dates and collapsed anything earlier to "today",
+  // producing "You have spent £160 since today."
+  it('never describes a date in the past as today', () => {
+    const s = transactionsSummary(student, AS_OF)
+    expect(text(s)).not.toMatch(/since today/i)
+  })
+
+  it('says how much has been spent this period', () => {
+    expect(transactionsSummary(student, AS_OF).headline).toMatch(/£\d+/)
+  })
+
   it('compares this period against the daily pace in plain English', () => {
     const s = transactionsSummary(student, AS_OF)
     expect(text(s)).toMatch(/£/)
