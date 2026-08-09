@@ -85,12 +85,26 @@ create table if not exists term_spans (
   primary key (user_id, id)
 );
 
+-- v4: the dated goal contribution ledger. Saving pace needs to know WHEN money went
+-- in, which a single running total on goals could never answer. goals.saved keeps its
+-- name but now means the OPENING BALANCE — what was put aside before Pocko — and is
+-- deliberately excluded from the pace (see src/engine/saving.js).
+create table if not exists goal_contributions (
+  user_id text not null references profiles(user_id) on delete cascade,
+  id      text not null,
+  goal_id text,
+  amount  numeric not null default 0,
+  date    date,
+  primary key (user_id, id)
+);
+
 create index if not exists idx_transactions_user  on transactions(user_id);
 create index if not exists idx_bills_user          on bills(user_id);
 create index if not exists idx_income_sources_user on income_sources(user_id);
 create index if not exists idx_goals_user          on goals(user_id);
 create index if not exists idx_events_user         on events(user_id);
 create index if not exists idx_term_spans_user     on term_spans(user_id);
+create index if not exists idx_goal_contribs_user  on goal_contributions(user_id);
 
 -- Usage analytics: one row per user action, so we can see what the trial students
 -- actually use most. Server-written only (verified user_id), so no RLS (see header).
@@ -112,7 +126,7 @@ create index if not exists idx_usage_events_time  on usage_events(created_at);
 do $$
 declare t text;
 begin
-  foreach t in array array['profiles','transactions','bills','income_sources','goals','events','term_spans'] loop
+  foreach t in array array['profiles','transactions','bills','income_sources','goals','goal_contributions','events','term_spans'] loop
     execute format('alter table %I enable row level security', t);
     execute format('alter table %I force row level security', t);
     -- drop-then-create so re-applying this whole file is safe (idempotent).

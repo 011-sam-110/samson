@@ -9,7 +9,15 @@ const MAX_STR = 500
 // Bounded (month 01-12, day 01-31) not just digit-shaped: '2026-13-45' must fail here
 // rather than reach the DB, where a ::date cast on an invalid month/day would 500.
 const YMD = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/
-const okDate = (v) => v == null || (typeof v === 'string' && YMD.test(v))
+// The shape check alone still lets '2026-02-30' and '2027-02-29' through, and those
+// 500 on the ::date cast rather than 400ing here. Round-tripping through Date and
+// comparing back is the cheapest way to demand a day that actually exists.
+const isRealDate = (s) => {
+  const [y, m, d] = s.split('-').map(Number)
+  const dt = new Date(Date.UTC(y, m - 1, d))
+  return dt.getUTCFullYear() === y && dt.getUTCMonth() === m - 1 && dt.getUTCDate() === d
+}
+const okDate = (v) => v == null || (typeof v === 'string' && YMD.test(v) && isRealDate(v))
 
 const num = (v) => {
   const n = typeof v === 'number' ? v : Number(v)
@@ -50,8 +58,15 @@ export function stateToRows(state, userId) {
     income_sources: withUser(state.incomeSources, (i) => ({
       id: i.id, label: i.label, kind: i.kind, amount: num(i.amount), next_date: i.nextDate,
     })),
+    // The `saved` COLUMN now carries the opening balance — money put aside before
+    // Pocko. Dated money lives in goal_contributions. The column keeps its old name
+    // so no DDL runs against the live table; this mapping is the only place that
+    // has to know, which is why it is spelled out here rather than inferred.
     goals: withUser(state.goals, (g) => ({
-      id: g.id, label: g.label, target: num(g.target), saved: num(g.saved), deadline: g.deadline,
+      id: g.id, label: g.label, target: num(g.target), saved: num(g.openingBalance), deadline: g.deadline,
+    })),
+    goal_contributions: withUser(state.contributions, (c) => ({
+      id: c.id, goal_id: c.goalId, amount: num(c.amount), date: c.date,
     })),
     events: withUser(state.events, (e) => ({
       id: e.id, label: e.label, amount: num(e.amount), date: e.date,
@@ -76,7 +91,10 @@ export function rowsToState(rows) {
       id: b.id, label: b.label, amount: num(b.amount), freq: b.freq, nextDue: ymd(b.next_due),
     })),
     goals: (rows.goals || []).map((g) => ({
-      id: g.id, label: g.label, target: num(g.target), saved: num(g.saved), deadline: ymd(g.deadline),
+      id: g.id, label: g.label, target: num(g.target), openingBalance: num(g.saved), deadline: ymd(g.deadline),
+    })),
+    contributions: (rows.goal_contributions || []).map((c) => ({
+      id: c.id, goalId: c.goal_id, amount: num(c.amount), date: ymd(c.date),
     })),
     events: (rows.events || []).map((e) => ({
       id: e.id, label: e.label, amount: num(e.amount), date: ymd(e.date),
@@ -95,6 +113,7 @@ export function rowsToState(rows) {
 const DATE_FIELDS = {
   incomeSources: ['nextDate'], bills: ['nextDue'], goals: ['deadline'],
   events: ['date'], termSpans: ['start', 'end'], transactions: ['date'],
+  contributions: ['date'],
 }
 
 // Server-side guard for an untrusted PUT body — mirrors src/lib/backup.js:parseBackup
@@ -109,9 +128,12 @@ export function validateState(obj) {
     if (!Array.isArray(obj[k])) throw new Error(`Invalid state: ${k} must be an array`)
     if (obj[k].length > MAX_ROWS) throw new Error(`Invalid state: ${k} exceeds ${MAX_ROWS} rows`)
   }
-  if ('termSpans' in obj) {
-    if (!Array.isArray(obj.termSpans)) throw new Error('Invalid state: termSpans must be an array')
-    if (obj.termSpans.length > MAX_ROWS) throw new Error(`Invalid state: termSpans exceeds ${MAX_ROWS} rows`)
+  // Optional collections: a pre-v4 client PUTs a body with no contributions key at
+  // all, and that must still save rather than 400 the user out of cloud sync.
+  for (const k of ['termSpans', 'contributions']) {
+    if (!(k in obj)) continue
+    if (!Array.isArray(obj[k])) throw new Error(`Invalid state: ${k} must be an array`)
+    if (obj[k].length > MAX_ROWS) throw new Error(`Invalid state: ${k} exceeds ${MAX_ROWS} rows`)
   }
   for (const [k, dateFields] of Object.entries(DATE_FIELDS)) {
     for (const row of obj[k] || []) {

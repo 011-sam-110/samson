@@ -16,8 +16,11 @@ function iso(offsetDays) {
 }
 
 export function defaultState() {
+  // Stable ids so the seeded contributions can point at the seeded goals.
+  const GOAL_TRIP = uid()
+  const GOAL_LAPTOP = uid()
   return {
-    version: 3,
+    version: 4,
     balance: 512.4,
     lastReconciled: iso(-2),
     incomeSources: [
@@ -30,8 +33,15 @@ export function defaultState() {
       { id: uid(), label: 'Subscriptions', amount: 16, freq: 'monthly', nextDue: iso(9) },
     ],
     goals: [
-      { id: uid(), label: 'Summer Interrail', target: 600, saved: 180, deadline: iso(84) },
-      { id: uid(), label: 'New laptop', target: 900, saved: 300, deadline: iso(210) },
+      { id: GOAL_TRIP, label: 'Summer Interrail', target: 600, openingBalance: 120, deadline: iso(84) },
+      { id: GOAL_LAPTOP, label: 'New laptop', target: 900, openingBalance: 300, deadline: iso(210) },
+    ],
+    // Real dated transfers into the trip goal. Only these count toward saving pace —
+    // the opening balances above are money that predates Pocko.
+    contributions: [
+      { id: uid(), goalId: GOAL_TRIP, amount: 25, date: iso(-12) },
+      { id: uid(), goalId: GOAL_TRIP, amount: 25, date: iso(-5) },
+      { id: uid(), goalId: GOAL_LAPTOP, amount: 40, date: iso(-9) },
     ],
     events: [{ id: uid(), label: "Ross's birthday", amount: 55, date: iso(5) }],
     // Illustrative term dates (relative to today) so the calendar's nudge + tints

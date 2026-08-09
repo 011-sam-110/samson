@@ -38,7 +38,7 @@ describe('per-day normalisers', () => {
 })
 
 describe('goal reserve', () => {
-  const goal = { target: 600, saved: 0, deadline: '2026-03-12' } // 70 days after ASOF
+  const goal = { target: 600, openingBalance: 0, deadline: '2026-03-12' } // 70 days after ASOF
 
   it('derives the weekly-required set-aside', () => {
     // £600 over 10 weeks = £60/week
@@ -50,14 +50,14 @@ describe('goal reserve', () => {
   })
 
   it('a fully-saved goal reserves nothing', () => {
-    expect(dailyGoalReserve({ target: 600, saved: 600, deadline: '2026-03-12' }, ASOF)).toBe(0)
+    expect(dailyGoalReserve({ target: 600, openingBalance: 600, deadline: '2026-03-12' }, ASOF)).toBe(0)
   })
 
   // Regression: daysLeft used to be clamped to a floor of 1, so a missed deadline
   // demanded the whole remaining balance every single day — £420 to go became a
   // £420/day reserve, and safe-to-spend went hundreds of pounds negative.
   describe('a deadline that has passed', () => {
-    const lapsed = { target: 600, saved: 180, deadline: '2025-12-25' } // 7 days BEFORE ASOF
+    const lapsed = { target: 600, openingBalance: 180, deadline: '2025-12-25' } // 7 days BEFORE ASOF
 
     it('reserves nothing — you cannot save into yesterday', () => {
       expect(dailyGoalReserve(lapsed, ASOF)).toBe(0)
@@ -90,7 +90,7 @@ describe('goal reserve', () => {
   // The day the deadline lands, there are no days left to spread the shortfall
   // across — but it hasn't been missed yet, so it reads "due today", not "passed".
   it('a goal due today reserves nothing but is not yet overdue', () => {
-    const p = goalProgress({ target: 600, saved: 180, deadline: ASOF }, ASOF)
+    const p = goalProgress({ target: 600, openingBalance: 180, deadline: ASOF }, ASOF)
     expect(p.perDay).toBe(0)
     expect(p.dueToday).toBe(true)
     expect(p.overdue).toBe(false)
@@ -107,7 +107,7 @@ describe('computeDashboard - reproduces the PRD worked example', () => {
       { id: 'phone', label: 'Phone', amount: 15, freq: 'monthly', nextDue: '2026-01-05' },
       { id: 'subs', label: 'Subscriptions', amount: 12, freq: 'monthly', nextDue: '2026-01-08' },
     ],
-    goals: [{ id: 'trip', label: 'Summer trip', target: 600, saved: 0, deadline: '2026-03-12' }],
+    goals: [{ id: 'trip', label: 'Summer trip', target: 600, openingBalance: 0, deadline: '2026-03-12' }],
     events: [],
     transactions: [],
   }
@@ -180,7 +180,7 @@ describe('sustainable target rate + run rate', () => {
       balance: 500,
       incomeSources: [{ id: 'w', kind: 'monthly', amount: 900, nextDate: '2026-02-01' }],
       bills: [{ id: 'rent', amount: 450, freq: 'monthly', nextDue: '2026-01-28' }],
-      goals: [{ id: 'g', target: 300, saved: 0, deadline: '2026-04-01' }],
+      goals: [{ id: 'g', target: 300, openingBalance: 0, deadline: '2026-04-01' }],
       events: [],
       transactions: [],
     }
@@ -332,7 +332,7 @@ describe('canISpend verdicts', () => {
       { id: 'phone', amount: 15, freq: 'monthly', nextDue: '2026-01-05' },
       { id: 'subs', amount: 12, freq: 'monthly', nextDue: '2026-01-08' },
     ],
-    goals: [{ id: 'trip', target: 600, saved: 0, deadline: '2026-03-12' }],
+    goals: [{ id: 'trip', target: 600, openingBalance: 0, deadline: '2026-03-12' }],
     events: [],
     transactions: [],
   }
@@ -349,5 +349,32 @@ describe('canISpend verdicts', () => {
 
   it('warns tight when affordable but it guts the daily rate', () => {
     expect(canISpend(state, 285, ASOF).verdict).toBe('tight')
+  })
+})
+
+// v4: a goal's progress is its opening balance plus every dated transfer. Reading the
+// old single `saved` field would report every migrated goal as 0% funded, which
+// inflates its daily reserve and drags safe-to-spend down with it.
+describe('goalProgress with the dated contribution ledger', () => {
+  const goal = { id: 'g1', label: 'Trip', target: 300, openingBalance: 100, deadline: '2026-08-31' }
+  const contributions = [
+    { id: 'c1', goalId: 'g1', amount: 50, date: '2026-08-02' },
+    { id: 'c2', goalId: 'g2', amount: 90, date: '2026-08-03' },
+  ]
+
+  it('counts the opening balance and this goal\'s transfers', () => {
+    const p = goalProgress(goal, '2026-08-01', contributions)
+    expect(p.remaining).toBe(150) // 300 − (100 + 50); the g2 transfer is not ours
+  })
+
+  it('spreads only what is genuinely left across the days left', () => {
+    // Aug 1 → Aug 31 is 30 days. £150 ÷ 30 = £5/day.
+    expect(dailyGoalReserve(goal, '2026-08-01', contributions)).toBe(5)
+  })
+
+  it('does not silently treat a fully funded goal as needing the whole target', () => {
+    const funded = { ...goal, openingBalance: 300 }
+    expect(goalProgress(funded, '2026-08-01', []).done).toBe(true)
+    expect(dailyGoalReserve(funded, '2026-08-01', [])).toBe(0)
   })
 })

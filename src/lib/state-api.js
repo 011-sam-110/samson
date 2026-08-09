@@ -14,6 +14,7 @@ const CHILD = {
   bills: ['id', 'label', 'amount', 'freq', 'next_due'],
   income_sources: ['id', 'label', 'kind', 'amount', 'next_date'],
   goals: ['id', 'label', 'target', 'saved', 'deadline'],
+  goal_contributions: ['id', 'goal_id', 'amount', 'date'],
   events: ['id', 'label', 'amount', 'date'],
   term_spans: ['id', 'kind', 'label', 'start', 'end'],
 }
@@ -61,11 +62,13 @@ async function getState(userId, db) {
     const goals = await q('SELECT * FROM goals WHERE user_id = $1')
     const events = await q('SELECT * FROM events WHERE user_id = $1')
     const term_spans = await q('SELECT * FROM term_spans WHERE user_id = $1')
+    const goal_contributions = await q('SELECT * FROM goal_contributions WHERE user_id = $1 ORDER BY date DESC')
     await client.query('COMMIT')
     const state = migrate(rowsToState({
       profile: profile.rows[0],
       transactions: transactions.rows, bills: bills.rows, income_sources: income_sources.rows,
-      goals: goals.rows, events: events.rows, term_spans: term_spans.rows,
+      goals: goals.rows, goal_contributions: goal_contributions.rows,
+      events: events.rows, term_spans: term_spans.rows,
     }))
     return { status: 200, body: { state, updatedAt: toIso(profile.rows[0].updated_at) } }
   } catch (e) {
