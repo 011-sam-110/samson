@@ -9,20 +9,20 @@ import { savingPace, savingStreak } from './saving.js'
 describe('worked examples — spending', () => {
   for (const s of SCENARIOS) {
     describe(s.title, () => {
-      const result = spendingPace(s.state, s.asOf, s.period ? { period: s.period } : {})
+      // The same augmented view the printer builds, so the table the client reads and
+      // the assertions that guard it are looking at exactly one set of numbers.
+      const pace = spendingPace(s.state, s.asOf, s.period ? { period: s.period } : {})
+      const result = {
+        ...pace,
+        gauge: gaugePosition(pace.ratio),
+        canSpend40: canISpend(s.state, 40, s.asOf, s.period ? { period: s.period } : {}).fraction,
+      }
 
       for (const [key, expected] of Object.entries(s.expect)) {
-        if (key === 'gauge') continue
         it(`${key} = ${expected}`, () => {
           if (expected === null) expect(result[key]).toBeNull()
           else if (typeof expected === 'number') expect(result[key]).toBeCloseTo(expected, 9)
           else expect(result[key]).toBe(expected)
-        })
-      }
-
-      if (s.expect.gauge !== undefined) {
-        it(`gauge sits at ${s.expect.gauge}`, () => {
-          expect(gaugePosition(result.ratio)).toBeCloseTo(s.expect.gauge, 9)
         })
       }
     })
