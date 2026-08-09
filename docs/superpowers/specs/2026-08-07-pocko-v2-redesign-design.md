@@ -400,3 +400,55 @@ that arithmetic, and Sam's stated top priority is that it's right rather than ea
 - The colour video is a **phone photo of a screen**. Never sample hex from it.
 - Transcripts of both voice notes and the colour video are in the client-feedback doc — the
   source audio lives in `~/Downloads` and won't survive a cleanup.
+
+---
+
+## 10. Built — 2026-08-09
+
+The client's final message answered §8 and moved some of the arithmetic. What shipped
+follows **his final wording**, not this document where the two disagree. The
+differences, and why:
+
+| §8 question | His answer / what shipped |
+|---|---|
+| 1. Extra spending-pace terms | Kept. Expected income and planned spends are both in his own definition of available discretionary money. |
+| 2. Saving target source | Derived per goal from its own deadline: `remaining ÷ days to target date`. That is his formula verbatim. |
+| 3. Rolling streak | **Superseded.** His streak is "days at or above your target pace", and his pace is cumulative, so the 22-of-30 problem the rolling window solved does not arise the same way. Implemented literally; `STREAK_MIN_RATIO` is one constant if it needs softening. |
+| 4. 7-day lookback | **Superseded.** Actual pace is now *period-to-date* — "discretionary spending so far ÷ days elapsed" — not a trailing average. His words, and what a spreadsheet computes. |
+| 5. No-data state | Confirmed by his emphasis on accuracy. Under 3 logged days in the last 7 → no colour, no needle, no verdict. |
+| 6. Bands | 5% grace above 1.00 before amber, red only past 1.25 — his "don't tell users they're in danger for being 5% over". All in `SPENDING_BANDS` / `SAVING_BANDS`. |
+| 7. Palette | Built as specced in §3. |
+
+### One deliberate departure from §2.1
+
+**The rent fix is gone.** This spec pro-rata-reserved bills landing just *after* the
+window so "£24/day!" never became "...oh, rent landed". It is safer, and it is
+incompatible with what he actually asked for:
+
+> "If I give the same hypothetical financial situation to a calculator/spreadsheet and
+> to Pocko, they should produce the same result."
+
+Nobody computing this by hand reserves part of next month's rent. So commitments are
+only those due inside the period, and bills landing just outside are **reported** as
+`justAfterPeriod` — named in the page summary and listed under "What's coming out",
+greyed and excluded from the sum. The safety comes from the warning, not from quietly
+altering his arithmetic.
+
+### Where the maths lives
+
+- `src/engine/pace.js` — period, available discretionary money, spending pace, bands,
+  gauge position, Can I Spend, underspend
+- `src/engine/saving.js` — required/actual saving pace, ratio, bands, streak
+- `src/engine/summaries.js` — the per-page plain-English summaries (pure, never LLM)
+- `src/engine/worked-examples.js` — his examples plus hand-calculated cases, asserted
+  by `worked-examples.test.js` and printable via `node scripts/worked-examples.mjs`
+
+331 unit tests pass, plus `scripts/db-integration.mjs` against a real Postgres.
+
+### Not done, deliberately
+
+- **Calendar day cells** still use a teal spending-heat fill with event dots, rather
+  than the green/red semantic fills in §5. His final message does not mention the
+  calendar, and he asked not to reopen the concept — this is cosmetic and can follow.
+- **Open banking** — the seam exists (manual entry only), as planned for phase 4.
+- **Google Calendar sync** — phase 4, untouched.
