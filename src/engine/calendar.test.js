@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { isoDate, daySpend, heatLevel, billOccurrences, monthMatrix, termSpansOn, termNudge, buildMonth } from './calendar.js'
+import { isoDate, daySpend, heatLevel, dayQuality, billOccurrences, monthMatrix, termSpansOn, termNudge, buildMonth } from './calendar.js'
 
 const tx = (over) => ({ type: 'expense', category: 'going_out', amount: 10, date: '2026-01-10', ...over })
 
@@ -29,6 +29,24 @@ describe('heatLevel', () => {
   it('is 4 at the scale max', () => expect(heatLevel(40, 40)).toBe(4))
   it('buckets a mid value', () => expect(heatLevel(10, 40)).toBe(1))
   it('never divides by zero when scaleMax is 0', () => expect(heatLevel(0, 0)).toBe(0))
+})
+
+describe('dayQuality', () => {
+  it('is unknown with no targetDaily to compare against', () => {
+    expect(dayQuality(20, 0)).toBe('unknown')
+    expect(dayQuality(20, null)).toBe('unknown')
+  })
+  it('is good at or comfortably under the daily target', () => {
+    expect(dayQuality(0, 20)).toBe('good')
+    expect(dayQuality(20, 20)).toBe('good') // exactly on pace
+  })
+  it('is warn between on-pace and the over cutoff', () => {
+    expect(dayQuality(23, 20)).toBe('warn') // 1.15x
+  })
+  it('is bad at or past the over cutoff, same as the Overview gauge', () => {
+    expect(dayQuality(25, 20)).toBe('bad') // 1.25x
+    expect(dayQuality(40, 20)).toBe('bad')
+  })
 })
 
 describe('billOccurrences', () => {
@@ -139,6 +157,13 @@ describe('buildMonth', () => {
   it('marks discretionary spend and its heat level', () => {
     expect(cellFor('2026-01-12').spend).toBe(20)
     expect(cellFor('2026-01-12').heatLevel).toBe(4) // it is the month max
+  })
+  it('is unknown without a targetDaily, and judged against one when given', () => {
+    expect(cellFor('2026-01-12').quality).toBe('unknown')
+    const withTarget = buildMonth(state, '2026-01-15', '2026-01-15', 8).weeks.flat()
+    // £20 spent against an £8 target on 2026-01-12 is well over pace.
+    expect(withTarget.find((c) => c.date === '2026-01-12').quality).toBe('bad')
+    expect(withTarget.find((c) => c.date === '2026-01-01').quality).toBe('good') // no spend logged
   })
   it('attaches bills, events and term spans to the right days', () => {
     expect(cellFor('2026-01-18').bills[0].label).toBe('Rent')

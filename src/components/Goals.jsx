@@ -1,13 +1,12 @@
 import { useState } from 'react'
 import { useStore } from '../store/store.js'
-import { savingPace, savingStreak } from '../engine/saving.js'
+import { savingPace } from '../engine/saving.js'
 import { goalsSummary } from '../engine/summaries.js'
 import { gbp, shortDate } from '../lib/format.js'
 import { Page, PageSummary, Section } from './Page.jsx'
-import { Sheet, Explain } from './ui.jsx'
+import { Sheet } from './ui.jsx'
 import { GoalForm, ContributeForm } from './forms.jsx'
 import { IconPlus, IconTrash, IconCheck } from './icons.jsx'
-import SavingPaceBar from './SavingPaceBar.jsx'
 
 // Saving goals.
 //
@@ -20,19 +19,14 @@ import SavingPaceBar from './SavingPaceBar.jsx'
 //   • the pace  — dated transfers only, measured against what the goal needs
 //
 // Planned spends have moved to the Calendar, where a dated cost belongs.
-
-const BAND_LABEL = {
-  ahead: 'Ahead of pace',
-  'on-pace': 'On pace',
-  'slightly-behind': 'Slightly behind',
-  behind: 'Behind',
-  done: 'Done',
-  missed: 'Deadline passed',
-  unknown: 'No transfers yet',
-}
-
-const BAND_PILL = { ahead: 'go', 'on-pace': 'go', 'slightly-behind': 'tight', behind: 'over', done: 'go', missed: 'over', unknown: '' }
-
+//
+// The pace chart itself (band pill, SavingPaceBar, streak) is parked as of his
+// 13 Aug note: "scrap the saving pace, including in the goals section... it's a
+// good feature but we haven't thought it out as clearly as the spending rate."
+// He called this page "brilliant" three minutes later, which is why only the
+// pace sub-feature is gone here — savingPace() still runs, still supplies the
+// bar and the remaining/target figures below, it just no longer renders its
+// own band/ratio. If he wants the pace chart back, the data is still live.
 export default function Goals() {
   const { state, actions } = useStore()
   const [adding, setAdding] = useState(false)
@@ -65,7 +59,6 @@ export default function Goals() {
 
           {goals.map((g) => {
             const p = savingPace(g, state.contributions, asOf)
-            const streak = savingStreak(g, state.contributions, asOf)
             return (
               <div className="card card-pad goal-card" key={g.id}>
                 <div className="goal-head">
@@ -94,41 +87,6 @@ export default function Goals() {
                     {gbp(p.openingBalance)} was already put aside before Pocko
                     {p.contributed > 0 && <> · {gbp(p.contributed)} transferred since</>}
                   </p>
-                )}
-
-                {!p.done && !p.missed && (
-                  <div className="goal-pace">
-                    <div className="goal-pace-top">
-                      <span className="label">
-                        Saving pace
-                        <Explain label="saving pace">
-                          What you've actually transferred per day, against what this goal needs per day to land
-                          on time. <b>1.00</b> is exactly on track. Only real transfers count — spending less than
-                          usual is good, but it isn't saving until the money moves.
-                        </Explain>
-                      </span>
-                      <span className={`pill ${BAND_PILL[p.band] || 'neutral'}`}>{BAND_LABEL[p.band]}</span>
-                    </div>
-
-                    <SavingPaceBar pace={p} />
-
-                    <p className="goal-working">
-                      {p.dataQuality === 'insufficient' ? (
-                        <>Needs {gbp(p.requiredDaily)} a day. Nothing transferred yet.</>
-                      ) : (
-                        <>
-                          You're putting in <b>{gbp(p.actualDaily)}</b> a day; it needs{' '}
-                          <b>{gbp(p.requiredDaily)}</b> a day — that's <b>{p.ratio.toFixed(2)}×</b>.
-                        </>
-                      )}
-                    </p>
-
-                    {streak.current >= 2 && (
-                      <p className="goal-streak">
-                        🔥 {streak.current} days at or above the pace this goal needs.
-                      </p>
-                    )}
-                  </div>
                 )}
 
                 <div className="goal-foot">

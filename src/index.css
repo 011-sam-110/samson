@@ -705,15 +705,18 @@ input[type='number'] {
 }
 
 /* ── the gauge card ────────────────────────────────────────────────────── */
+/* Tighter than before on purpose: his note was "Can I Spend is slightly
+   lower than it should be" on a laptop. The order he asked for earlier —
+   pace, then Can I Spend — stays; this card just takes less scroll to clear. */
 .panel {
   position: relative;
   border-radius: var(--r-lg);
   background: var(--surface);
   border: 1px solid var(--line);
   color: var(--ink);
-  padding: 20px 24px 22px;
+  padding: 16px 22px 18px;
   box-shadow: var(--shadow);
-  margin-top: 16px;
+  margin-top: 12px;
 }
 .panel-top {
   position: relative;
@@ -739,7 +742,7 @@ input[type='number'] {
 }
 .gauge-svg {
   width: 100%;
-  max-width: 340px;
+  max-width: 260px;
   height: auto;
   display: block;
 }
@@ -1775,6 +1778,30 @@ input[type='number'] {
   background: var(--h4);
   color: #fff;
 }
+
+/* Full-bleed, not a dot in the corner — colour answering "good day or bad
+   day" against pace, the same question the Overview gauge answers. Bold
+   enough to read from a squint; *-text tokens keep the day number legible. */
+.cal-cell.quality-good {
+  background: color-mix(in srgb, var(--good) 40%, var(--surface));
+  color: var(--good-text);
+  border-color: color-mix(in srgb, var(--good) 55%, var(--surface));
+}
+.cal-cell.quality-warn {
+  background: color-mix(in srgb, var(--warn) 40%, var(--surface));
+  color: var(--warn-text);
+  border-color: color-mix(in srgb, var(--warn) 55%, var(--surface));
+}
+.cal-cell.quality-bad {
+  background: color-mix(in srgb, var(--bad) 40%, var(--surface));
+  color: var(--bad-text);
+  border-color: color-mix(in srgb, var(--bad) 55%, var(--surface));
+}
+.cal-cell.quality-good:hover,
+.cal-cell.quality-warn:hover,
+.cal-cell.quality-bad:hover {
+  border-color: var(--blue);
+}
 .cal-cell.term-freshers {
   box-shadow: inset 0 3px 0 var(--warn-edge);
 }
@@ -1787,18 +1814,23 @@ input[type='number'] {
 
 .cal-ring,
 .cal-pip {
-  width: 8px;
-  height: 8px;
+  width: 9px;
+  height: 9px;
   border-radius: 999px;
   display: inline-block;
   flex: 0 0 auto;
 }
+/* Ink, not a semantic colour — bill/planned markers sit on top of a quality
+   fill that already uses good/warn/bad, so they stay a separate visual layer
+   with a surface-coloured halo to hold up against any of the three fills. */
 .cal-ring {
-  border: 2px solid var(--muted);
+  border: 2px solid var(--ink);
+  background: var(--surface);
   box-sizing: border-box;
 }
 .cal-pip {
-  background: var(--warn);
+  background: var(--ink);
+  box-shadow: 0 0 0 2px var(--surface);
 }
 .cal-cell .cal-ring {
   position: absolute;
@@ -1837,6 +1869,18 @@ input[type='number'] {
 }
 .cal-legend i.l4 {
   background: var(--h4);
+}
+.cal-legend i.lq-good {
+  background: color-mix(in srgb, var(--good) 40%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--good) 55%, var(--surface));
+}
+.cal-legend i.lq-warn {
+  background: color-mix(in srgb, var(--warn) 40%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--warn) 55%, var(--surface));
+}
+.cal-legend i.lq-bad {
+  background: color-mix(in srgb, var(--bad) 40%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--bad) 55%, var(--surface));
 }
 .cal-key {
   display: inline-flex;
@@ -1924,15 +1968,23 @@ input[type='number'] {
 }
 
 /* The first thing anyone reads. Deliberately the largest type on the page —
-   larger than the headings under it — so the answer outranks the evidence. */
+   larger than the headings under it — so the answer outranks the evidence.
+   His words: "the summary needs a big box around it, something that says
+   make it scream and shout... legible in 5 seconds without even reading it."
+   A left rule was too quiet to do that; a filled, coloured card is the
+   literal ask, and the fill is the same good/warn/bad the rest of the app
+   already uses, so it's one more place colour carries meaning, not a new one. */
 .page-summary {
-  border-left: 3px solid var(--line);
-  padding: 2px 0 2px 18px;
+  border-radius: var(--r-lg);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  padding: 22px 26px;
+  box-shadow: var(--shadow);
 }
-.page-summary.is-good { border-left-color: var(--good); }
-.page-summary.is-warn { border-left-color: var(--warn); }
-.page-summary.is-bad { border-left-color: var(--bad); }
-.page-summary.is-neutral { border-left-color: var(--teal-edge); }
+.page-summary.is-good { background: var(--go-soft); border-color: var(--go-edge); }
+.page-summary.is-warn { background: var(--warn-soft); border-color: var(--warn-edge); }
+.page-summary.is-bad { background: var(--over-soft); border-color: var(--over-edge); }
+.page-summary.is-neutral { background: var(--surface); border-color: var(--line); }
 
 .page-summary-headline {
   font-family: var(--f-display);
@@ -1959,7 +2011,7 @@ input[type='number'] {
   max-width: 62ch;
 }
 
-.page-hero { display: flex; flex-direction: column; gap: 18px; }
+.page-hero { display: flex; flex-direction: column; gap: 14px; }
 
 /* Advanced tools and tips live at the bottom and look like it. */
 .page-tools {
@@ -2072,20 +2124,21 @@ input[type='number'] {
 
 /* The answer. One restrained accent edge — the verdict is carried by the words,
    with colour confirming it rather than doing the talking. */
+/* Same tone-wash as .page-summary: this answer is the reason the page
+   exists, so it gets the same weight of colour, not a quieter cousin of it. */
 .cis-answer {
-  border-radius: var(--r);
-  padding: 16px 18px;
+  border-radius: var(--r-lg);
+  padding: 18px 20px;
   border: 1px solid var(--line);
-  border-left-width: 4px;
   background: var(--surface-2);
 }
-.cis-answer.tone-good { border-left-color: var(--good); }
-.cis-answer.tone-warn { border-left-color: var(--warn); }
-.cis-answer.tone-bad { border-left-color: var(--bad); }
+.cis-answer.tone-good { background: var(--go-soft); border-color: var(--go-edge); }
+.cis-answer.tone-warn { background: var(--warn-soft); border-color: var(--warn-edge); }
+.cis-answer.tone-bad { background: var(--over-soft); border-color: var(--over-edge); }
 
 .cis-verdict {
   font-family: var(--f-display);
-  font-size: 1.5rem;
+  font-size: 1.75rem;
   font-weight: 700;
   letter-spacing: -0.02em;
   margin: 0 0 4px;
