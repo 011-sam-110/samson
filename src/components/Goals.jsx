@@ -76,7 +76,7 @@ export default function Goals() {
                 </div>
 
                 <div className={`bar ${p.done ? 'done' : ''}`}>
-                  <span style={{ width: `${Math.round(p.pct * 100)}%` }} />
+                  <span style={{ transform: `scaleX(${p.pct})` }} />
                 </div>
 
                 {/* Where the money in that bar actually came from. An opening balance
