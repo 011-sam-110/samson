@@ -1818,19 +1818,24 @@ input[type='number'] {
 .cal-pip {
   width: 9px;
   height: 9px;
-  border-radius: 999px;
   display: inline-block;
   flex: 0 0 auto;
 }
 /* Ink, not a semantic colour — bill/planned markers sit on top of a quality
    fill that already uses good/warn/bad, so they stay a separate visual layer
-   with a surface-coloured halo to hold up against any of the three fills. */
+   with a surface-coloured halo to hold up against any of the three fills.
+   Different SILHOUETTES, not just fill state: a hollow vs. filled circle at
+   9px reads as one blurry dot either way — his own named examples ("rent
+   day, birthday") were two different kinds of fact, so they get two
+   different shapes, legible without relying on colour or fine detail. */
 .cal-ring {
+  border-radius: 2px;
   border: 2px solid var(--ink);
   background: var(--surface);
   box-sizing: border-box;
 }
 .cal-pip {
+  border-radius: 999px;
   background: var(--ink);
   box-shadow: 0 0 0 2px var(--surface);
 }
@@ -2058,6 +2063,11 @@ input[type='number'] {
   flex-direction: column;
   gap: 16px;
 }
+/* Resting-state tone, before any amount is typed — "the whole purpose of
+   Pocko" carries colour by default now, not only once you've acted on it. */
+.cis.tone-good { background: var(--go-soft); border-color: var(--go-edge); }
+.cis.tone-warn { background: var(--warn-soft); border-color: var(--warn-edge); }
+.cis.tone-bad { background: var(--over-soft); border-color: var(--over-edge); }
 .cis-head h2 {
   font-size: var(--t-h2);
   margin: 0 0 4px;
@@ -2124,19 +2134,21 @@ input[type='number'] {
 }
 .cis-chips .chip:hover { border-color: var(--focus); color: var(--focus-text); }
 
-/* The answer. One restrained accent edge — the verdict is carried by the words,
-   with colour confirming it rather than doing the talking. */
-/* Same tone-wash as .page-summary: this answer is the reason the page
-   exists, so it gets the same weight of colour, not a quieter cousin of it. */
+/* The answer. Now that .cis itself carries a resting-state wash (see above),
+   this needs to visibly pop OUT of that wash rather than match it — a
+   stronger, more saturated tint on the elevated --surface-2, not the same
+   --*-soft tokens the card behind it already uses. Same tone-wash weight as
+   .page-summary in spirit, just tuned so the two nested cards don't merge
+   into one undifferentiated block of colour. */
 .cis-answer {
   border-radius: var(--r-lg);
   padding: 18px 20px;
   border: 1px solid var(--line);
   background: var(--surface-2);
 }
-.cis-answer.tone-good { background: var(--go-soft); border-color: var(--go-edge); }
-.cis-answer.tone-warn { background: var(--warn-soft); border-color: var(--warn-edge); }
-.cis-answer.tone-bad { background: var(--over-soft); border-color: var(--over-edge); }
+.cis-answer.tone-good { background: color-mix(in srgb, var(--good) 30%, var(--surface-2)); border-color: var(--go-edge); }
+.cis-answer.tone-warn { background: color-mix(in srgb, var(--warn) 30%, var(--surface-2)); border-color: var(--warn-edge); }
+.cis-answer.tone-bad { background: color-mix(in srgb, var(--bad) 30%, var(--surface-2)); border-color: var(--over-edge); }
 
 .cis-verdict {
   font-family: var(--f-display);

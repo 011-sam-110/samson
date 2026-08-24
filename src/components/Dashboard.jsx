@@ -73,7 +73,7 @@ export default function Dashboard() {
             <Gauge ratio={pace.ratio} band={pace.band} dataQuality={pace.dataQuality} />
             <div className="gauge-readout">
               <div className="cap">{pace.overcommitted ? 'Nothing spare today' : 'Left to spend today'}</div>
-              <div className="num">{gbpWhole(count)}</div>
+              <div className={`num ${BAND_PILL[pace.band] || ''}`}>{gbpWhole(count)}</div>
               <div className="sub">
                 {pace.overcommitted
                   ? `${gbp(pace.shortfall)} short before ${shortDate(pace.end)}`

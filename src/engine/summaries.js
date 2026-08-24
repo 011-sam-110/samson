@@ -158,8 +158,14 @@ export function calendarSummary(state, asOf = new Date()) {
 
   const total = items.reduce((s, x) => s + x.amount, 0)
   const next = items[0]
+  // Not total vs p.available: that compares a 30-day cost list against money
+  // available for the CURRENT (often shorter) period, so a normal month with
+  // rent in it reads as a warning every time — verified against the £800/
+  // rent-paid/no-overspend fixture in summaries.test.js. p.overcommitted is
+  // the one number in the engine actually tested to mean "something is
+  // genuinely wrong right now"; reuse it instead of a second, looser metric.
   return {
-    tone: total > Math.max(p.available, 0) ? 'warn' : 'neutral',
+    tone: p.overcommitted ? 'warn' : 'neutral',
     headline: `${money(total)} of known costs over the next month.`,
     lines: [
       `Next up is ${next.label}, ${money(next.amount)}, ${when(next.date, asOf)}.`,
@@ -229,8 +235,14 @@ export function goalsSummary(state, asOf = new Date()) {
   const done = paces.filter((p) => p.done).length
   if (done) lines.push(`${plural(done, 'goal is', 'goals are')} already there.`)
 
+  // Not ratio-driven: closest.ratio is the saving-pace figure the client asked
+  // to scrap from this page ("scrap the saving pace, including in the goals
+  // section"). It no longer renders in the Goals card UI, but it was still
+  // secretly picking this banner's colour — done/missed/neutral is what he
+  // actually said to keep, and a goal with months of runway shouldn't read
+  // as a warning just because a transfer schedule hasn't caught up yet.
   return {
-    tone: closest.done ? 'good' : closest.dataQuality === 'insufficient' ? 'neutral' : closest.ratio >= 1 ? 'good' : 'warn',
+    tone: closest.done ? 'good' : closest.missed ? 'warn' : 'neutral',
     headline: closest.done
       ? `${closest.label} is done.`
       : `${closest.label} needs ${money(closest.remaining)} more by ${when(closest.deadline, asOf)}.`,
