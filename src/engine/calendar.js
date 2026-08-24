@@ -3,6 +3,7 @@
 // consistent with the dashboard's run-rate (discretionary = non-fixed spend).
 import { toDate, addDays, addMonths, daysBetween } from './finance.js'
 import { typeOf } from '../lib/categories.js'
+import { spendingBand } from './pace.js'
 
 const amt = (t) => Number(t.amount) || 0
 const isDiscretionary = (t) => t.type === 'expense' && typeOf(t.category) !== 'fixed'
@@ -29,6 +30,19 @@ export function daySpend(transactions, dayISO) {
 export function heatLevel(spend, scaleMax) {
   if (!(spend > 0) || !(scaleMax > 0)) return 0
   return Math.min(4, Math.ceil((spend / scaleMax) * 4))
+}
+
+// A day's spend judged against pace, not against the month's own max — the
+// distinction the client drew: heat says "a lot, relative to your other days";
+// this says "good day or bad day", relative to what you can actually afford.
+// Reuses spendingBand so a red day here means the same thing a red gauge
+// position means on Overview — one definition of "over", not two.
+export function dayQuality(spend, targetDaily) {
+  if (!(targetDaily > 0)) return 'unknown'
+  const band = spendingBand(spend / targetDaily)
+  if (band === 'comfortable' || band === 'on-pace') return 'good'
+  if (band === 'over') return 'warn'
+  return 'bad'
 }
 
 // Every ISO date a recurring bill lands on within [fromISO, toISO] (inclusive).
@@ -157,8 +171,11 @@ function messageFor(span, phase, daysUntil) {
 }
 
 // The month, fully enriched for rendering: each cell carries its spend + heat
-// level, the bills/events landing on it, and any term spans covering it.
-export function buildMonth(state, anchor, asOf = new Date()) {
+// level, a good/warn/bad quality against targetDaily, the bills/events landing
+// on it, and any term spans covering it. targetDaily comes from spendingPace()
+// on Overview — passed in rather than recomputed here, so this file stays
+// decoupled from the full pace calculation and only borrows its band cutoffs.
+export function buildMonth(state, anchor, asOf = new Date(), targetDaily = null) {
   const weeks = monthMatrix(anchor)
   const flat = weeks.flat()
   const gridStart = flat[0].date
@@ -200,6 +217,7 @@ export function buildMonth(state, anchor, asOf = new Date()) {
         // Only the anchor month is heat-scaled; trailing/leading days belong to
         // their own month and are shown (heated) when you page to it.
         heatLevel: cell.inMonth ? heatLevel(spend, scaleMax) : 0,
+        quality: cell.inMonth ? dayQuality(spend, targetDaily) : 'unknown',
         bills: billsByDay.get(cell.date) || [],
         events: eventsByDay.get(cell.date) || [],
         terms: termSpansOn(state && state.termSpans, cell.date).map((s) => ({ kind: s.kind, label: s.label })),

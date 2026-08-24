@@ -129,6 +129,28 @@ describe('calendarSummary', () => {
     const s = calendarSummary({ ...student, events: [], bills: [] }, AS_OF)
     expect(s.tone).not.toBe('bad')
   })
+
+  // Regression: tone used to be `total > p.available`, comparing a 30-day cost
+  // list against money available for only the CURRENT (often shorter) period —
+  // so an ordinary month with rent in it read as a warning by default. The
+  // `student` fixture (£800 balance, rent+phone paid on schedule, no
+  // overspending) is exactly that ordinary month: £470 of known 30-day costs
+  // against £330 available for the current ~14-day period, which used to warn.
+  it('stays neutral for a routine month even though known 30-day costs exceed the current period\'s spending money', () => {
+    const s = calendarSummary(student, AS_OF)
+    expect(s.tone).toBe('neutral')
+  })
+
+  it('still warns when the student is genuinely overcommitted this period', () => {
+    const overcommitted = {
+      ...student,
+      balance: 10,
+      incomeSources: [],
+      bills: [{ id: 'b1', label: 'Rent', amount: 400, freq: 'monthly', nextDue: '2026-08-28' }],
+    }
+    const s = calendarSummary(overcommitted, AS_OF)
+    expect(s.tone).toBe('warn')
+  })
 })
 
 describe('analyticsSummary', () => {
@@ -153,5 +175,29 @@ describe('goalsSummary', () => {
 
   it('invites a first goal rather than showing an empty verdict', () => {
     expect(text(goalsSummary(empty, AS_OF))).toMatch(/goal/i)
+  })
+
+  // Regression: tone used to be driven by the saving-pace ratio — the exact
+  // metric the client said to scrap "including in the goals section". A goal
+  // with months of runway and no transfers yet used to render as a warning
+  // purely because the pace ratio was behind, even though nothing is wrong.
+  it('stays neutral for a goal with plenty of runway and a low saving-pace ratio', () => {
+    const slowStart = {
+      ...student,
+      goals: [{ id: 'g1', label: 'Holiday', target: 1000, openingBalance: 0, startedOn: '2026-08-01', deadline: '2027-08-01' }],
+      contributions: [],
+    }
+    const s = goalsSummary(slowStart, AS_OF)
+    expect(s.tone).toBe('neutral')
+  })
+
+  it('still warns when a goal\'s deadline has actually passed', () => {
+    const missed = {
+      ...student,
+      goals: [{ id: 'g1', label: 'Holiday', target: 1000, openingBalance: 0, startedOn: '2026-01-01', deadline: '2026-08-01' }],
+      contributions: [{ id: 'c1', goalId: 'g1', amount: 50, date: '2026-01-10' }],
+    }
+    const s = goalsSummary(missed, AS_OF)
+    expect(s.tone).toBe('warn')
   })
 })

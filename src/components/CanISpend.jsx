@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useStore } from '../store/store.js'
 import { canISpend } from '../engine/pace.js'
-import { gbp, gbpWhole } from '../lib/format.js'
+import { gbp } from '../lib/format.js'
 
 // "Can I spend £X?"
 //
@@ -25,6 +25,15 @@ const TIER_TONE = {
   easy: 'good', fine: 'good', tight: 'warn', big: 'warn', stretch: 'bad', no: 'bad',
 }
 
+// Same tone the Overview gauge answers to, so this card — "the whole purpose
+// of Pocko," his words — carries colour even before anyone types an amount.
+// Without this it was the least visually weighted thing on the page: plain
+// and uncoloured until an action was taken, on the one feature he named by
+// name as wanting to be unmissable.
+const BAND_TONE = {
+  comfortable: 'good', 'on-pace': 'good', over: 'warn', attention: 'bad', overcommitted: 'bad', unknown: '',
+}
+
 export default function CanISpend({ compact = false }) {
   const { state, actions } = useStore()
   const [amount, setAmount] = useState('')
@@ -32,6 +41,7 @@ export default function CanISpend({ compact = false }) {
   const spend = Number(amount) || 0
   const r = spend > 0 ? canISpend(state, spend, new Date()) : null
   const room = canISpend(state, 0, new Date())
+  const restingTone = BAND_TONE[room.before.band] || ''
 
   const logIt = () => {
     actions.addExpense({ label: `Spend of ${gbp(spend)}`, amount: spend, category: 'other', freq: 'oneoff' })
@@ -39,12 +49,13 @@ export default function CanISpend({ compact = false }) {
   }
 
   return (
-    <section className={`cis ${compact ? 'cis-compact' : ''}`} aria-label="Can I spend?">
+    <section
+      className={`cis ${restingTone ? `tone-${restingTone}` : ''} ${compact ? 'cis-compact' : ''}`}
+      aria-label="Can I spend?"
+    >
       <div className="cis-head">
         <h2>Can I spend…?</h2>
-        <p className="cis-room">
-          You have about <b>{gbpWhole(room.before.leftThisWeek)}</b> of comfortable spending room this week.
-        </p>
+        <p className="cis-room">Type an amount to check it against your pace.</p>
       </div>
 
       <div className="cis-entry">

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useStore } from '../store/store.js'
 import { addMonths } from '../engine/finance.js'
 import { buildMonth, termNudge } from '../engine/calendar.js'
+import { spendingPace } from '../engine/pace.js'
 import { gbp, fullDate } from '../lib/format.js'
 import { Sheet } from './ui.jsx'
 import { TermSpanForm } from './forms.jsx'
@@ -12,10 +13,13 @@ const KIND_LABEL = { freshers: 'Freshers', exams: 'Exams', term: 'Term' }
 
 const dayNum = (iso) => Number(iso.slice(8, 10))
 
+// Full-bleed colour is the day's own answer to "was this a good day or a bad
+// one", not a little dot in the corner. Bills and planned spends are a
+// different kind of fact — they still get a marker, just not the fill.
 function cellClass(cell) {
   const cls = ['cal-cell']
   if (!cell.inMonth) cls.push('out-month')
-  if (cell.heatLevel > 0) cls.push(`heat-${cell.heatLevel}`)
+  if (cell.inMonth && cell.quality !== 'unknown') cls.push(`quality-${cell.quality}`)
   if (cell.isToday) cls.push('is-today')
   if (cell.terms.length) cls.push(`term-${cell.terms[0].kind}`)
   return cls.join(' ')
@@ -28,7 +32,10 @@ export default function Calendar() {
   const [addingTerm, setAddingTerm] = useState(false)
 
   const now = new Date()
-  const { monthLabel, weeks } = buildMonth(state, anchor, now)
+  // Same daily allowance Overview's gauge answers to, so a red day here and a
+  // red gauge mean the same thing — one definition of "over", not two.
+  const { targetDaily } = spendingPace(state, now)
+  const { monthLabel, weeks } = buildMonth(state, anchor, now, targetDaily)
   const nudge = termNudge(state, now)
   const spans = state.termSpans || []
 
@@ -71,12 +78,15 @@ export default function Calendar() {
       </div>
 
       <div className="cal-legend">
-        <span>Less</span>
-        <i className="l1" />
-        <i className="l2" />
-        <i className="l3" />
-        <i className="l4" />
-        <span>more spent · </span>
+        <span className="cal-key">
+          <i className="lq-good" /> good day
+        </span>
+        <span className="cal-key">
+          <i className="lq-warn" /> tight
+        </span>
+        <span className="cal-key">
+          <i className="lq-bad" /> over
+        </span>
         <span className="cal-key">
           <span className="cal-ring" /> bill
         </span>
