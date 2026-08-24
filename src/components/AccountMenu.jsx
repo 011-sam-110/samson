@@ -3,7 +3,7 @@ import { useStore } from '../store/store.js'
 import { useAuth } from '../lib/auth-context.jsx'
 import { serializeState, parseBackup, backupFilename, downloadJSON } from '../lib/backup.js'
 import { Sheet, Segmented } from './ui.jsx'
-import { IconUser, IconSettings, IconDownload, IconUpload, IconRefresh, IconTrash } from './icons.jsx'
+import { IconUser, IconSettings, IconDownload, IconUpload, IconRefresh, IconTrash, IconBank } from './icons.jsx'
 
 // The account button every finance app has in the top right. It shows who you're
 // signed in as (or that you're a guest on this device only), and collects
@@ -125,6 +125,23 @@ export default function AccountMenu({ theme, setTheme }) {
             </span>
           </button>
           <input ref={fileRef} type="file" accept="application/json,.json" hidden onChange={onImportFile} />
+
+          {/* Bank feed (Open Banking): NOT built yet — see docs/open-banking-spec.md.
+              Deliberately disabled + labelled rather than hidden, so the entry point
+              exists in the UI without pretending it connects to anything. */}
+          <button
+            className="menu-item"
+            role="menuitem"
+            disabled
+            title="Coming soon — connecting a bank needs Sam to set up a provider first"
+          >
+            <IconBank />
+            <span>
+              Connect your bank
+              <em>Import transactions automatically</em>
+            </span>
+            <span className="menu-item-badge">Soon</span>
+          </button>
 
           <button className="menu-item" role="menuitem" onClick={onReset}>
             <IconRefresh />

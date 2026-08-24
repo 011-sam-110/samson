@@ -153,3 +153,12 @@ export const IconClock = (p) => (
   </svg>
 )
 
+export const IconBank = (p) => (
+  <svg viewBox="0 0 24 24" {...S} {...p}>
+    <path d="M3 10l9-6 9 6" />
+    <path d="M4 10h16v9H4z" />
+    <path d="M2.5 19h19" />
+    <path d="M8 13v4M12 13v4M16 13v4" />
+  </svg>
+)
+
